@@ -30,6 +30,10 @@ function App(): React.JSX.Element {
     Alert.alert('Image Captured', `URI: ${image?.uri}`);
     // You can upload or process image here
   };
+  const handleQRCodeScanned = (data: string) => {
+    setShowCamera(false);
+    Alert.alert('QR Code Scanned', data);
+  };
 
   return (
     <View style={[backgroundStyle, {flex: 1}]}>
@@ -50,6 +54,7 @@ function App(): React.JSX.Element {
         setShowCamera={setShowCamera}
         cameraRef={cameraRef}
         submit={submit}
+        handleQRCodeScanned={handleQRCodeScanned}
       />
     </View>
   );

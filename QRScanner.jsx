@@ -11,21 +11,27 @@ import {
 import {Camera} from 'react-native-camera-kit';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-const QRScanner = ({showCamera, cameraRef, setShowCamera, submit}) => {
+const QRScanner = ({
+  showCamera,
+  cameraRef,
+  setShowCamera,
+  submit,
+  handleQRCodeScanned,
+}) => {
   const [capturedImage, setCapturedImage] = useState(null);
-  const [cameraType, setCameraType] = useState('front'); // 'front' or 'back'
+  const [cameraType, setCameraType] = useState('back'); // 'front' or 'back'
 
-  const handleCapture = async () => {
-    try {
-      if (cameraRef.current) {
-        const image = await cameraRef.current.capture();
-        setCapturedImage(image);
-      }
-    } catch (error) {
-      console.log('Error capturing image:', error.message);
-      Alert.alert('Error', 'Failed to capture image.');
-    }
-  };
+  // const handleCapture = async () => {
+  //   try {
+  //     if (cameraRef.current) {
+  //       const image = await cameraRef.current.capture();
+  //       setCapturedImage(image);
+  //     }
+  //   } catch (error) {
+  //     console.log('Error capturing image:', error.message);
+  //     Alert.alert('Error', 'Failed to capture image.');
+  //   }
+  // };
 
   const handleRetake = () => {
     setCapturedImage(null);
@@ -56,6 +62,11 @@ const QRScanner = ({showCamera, cameraRef, setShowCamera, submit}) => {
               style={styles.cameraPreview}
               cameraType={cameraType}
               flashMode="auto"
+              scanBarcode={true}
+              onReadCode={event => {
+                const {codeStringValue} = event.nativeEvent;
+                handleQRCodeScanned(codeStringValue);
+              }}
             />
             <View style={styles.controlsContainer}>
               <TouchableOpacity
@@ -63,15 +74,15 @@ const QRScanner = ({showCamera, cameraRef, setShowCamera, submit}) => {
                 style={styles.actionButton}>
                 <Icon name="close" size={28} color="white" />
               </TouchableOpacity>
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 onPress={handleCapture}
                 style={styles.captureButton}>
                 <View style={styles.captureButtonInner} />
-              </TouchableOpacity>
+              </TouchableOpacity> */}
               <TouchableOpacity
                 onPress={toggleCameraType}
                 style={styles.actionButton}>
-                <Icon name="flip-camera-android" size={28} color="white" />
+                <Icon name="flip-camera-ios" size={28} color="white" />
               </TouchableOpacity>
             </View>
           </>
