@@ -1,0 +1,352 @@
+import React, {useEffect, useRef, useState} from 'react';
+import {
+  Alert,
+  Button,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import QRScanner from '../../../QRScanner';
+import {Camera} from 'react-native-camera-kit';
+import {getCardDetailsById, getStoreById} from '../../../services/api/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {colors} from '../../../utils/colors';
+import {fonts} from '../../../utils/fonts';
+import {StampsDetailsType, StoreDetailsType} from '../../types/passDetails';
+const {width, height} = Dimensions.get('window');
+const circleSize = width / 4.5;
+const PassdetailsScreen = () => {
+  const [showCamera, setShowCamera] = useState(false);
+  const [scannedQR, setScannedQR] = useState(false);
+  const [passDetails, setPassDetails] = useState<StampsDetailsType>();
+  const [storeDetails, setStoreDetails] = useState<StoreDetailsType>();
+  const cameraRef = useRef<typeof Camera.prototype>(null);
+
+  const getUserPassDetails = async (passId: string) => {
+    try {
+      const userPassResponse = await getCardDetailsById(passId);
+      console.log(userPassResponse);
+
+      if (userPassResponse.status == 200) {
+        setPassDetails(userPassResponse.data);
+        setScannedQR(true);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const getStoreLocalDetails = async () => {
+    let storeData = await AsyncStorage.getItem('storeData');
+    if (storeData) {
+      let parsedStoreData = await JSON.parse(storeData);
+      setStoreDetails(parsedStoreData);
+      console.log(storeData);
+    } else {
+      getStoreDetails();
+    }
+  };
+  const getStoreDetails = async () => {
+    const storeId = (await AsyncStorage.getItem('storeId')) || '';
+    console.log(storeId);
+
+    try {
+      const storeDataResponse = await getStoreById(
+        'be894d15-fa0d-4f8b-b139-693d5b40fb56',
+      );
+      if (storeDataResponse.status == 200) {
+        setStoreDetails(storeDataResponse.data);
+        console.log(storeDataResponse.data);
+        AsyncStorage.setItem(
+          'storeData',
+          JSON.stringify(storeDataResponse.data),
+        );
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const handleQRScan = (data: string) => {
+    setShowCamera(false);
+    if (data.length > 0) {
+      getUserPassDetails(data);
+    }
+    console.log('QR Code Scanned', data);
+  };
+  const submit = (image: any) => {
+    console.log('Captured image:', image);
+  };
+  useEffect(() => {
+    getStoreLocalDetails();
+  }, []);
+  return (
+    <View style={styles.container}>
+      <View style={styles.sectionContainer}>
+        <Button title="Scan QR Code" onPress={() => setShowCamera(true)} />
+      </View>
+
+      <QRScanner
+        showCamera={showCamera}
+        setShowCamera={setShowCamera}
+        cameraRef={cameraRef}
+        submit={submit}
+        handleQRCodeScanned={handleQRScan}
+      />
+      {scannedQR ? (
+        <View
+          style={[
+            styles.card,
+            {backgroundColor: storeDetails?.stamp_config.background_color},
+          ]}>
+          <View style={styles.circleContainer}>
+            {[...Array(storeDetails?.stamp_config?.no_of_stamps)].map(
+              (_, index) => (
+                <TouchableOpacity key={index}>
+                  {index < (passDetails?.stamps ?? 0) ? (
+                    <Image
+                      source={require('../../../assets/images/bean.png')}
+                      style={[styles.circle]}
+                    />
+                  ) : index ===
+                    (storeDetails?.stamp_config?.no_of_stamps ?? 0) - 1 ? (
+                    <View
+                      style={[
+                        styles.circle,
+                        storeDetails?.stamp_config?.stamp_shape ===
+                          'square' && {
+                          borderRadius: 8,
+                        },
+                        {
+                          backgroundColor:
+                            storeDetails?.stamp_config?.stamp_fill_color,
+                        },
+                      ]}>
+                      <Text
+                        style={{
+                          color: storeDetails?.stamp_config?.stamp_text_color,
+                        }}>
+                        Free
+                      </Text>
+                    </View>
+                  ) : (
+                    <View
+                      style={[
+                        styles.circle,
+                        storeDetails?.stamp_config?.stamp_shape ===
+                          'square' && {
+                          borderRadius: 8,
+                        },
+                        {
+                          backgroundColor:
+                            storeDetails?.stamp_config?.stamp_fill_color,
+                        },
+                      ]}
+                    />
+                  )}
+                </TouchableOpacity>
+              ),
+            )}
+          </View>
+        </View>
+      ) : null}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  sectionContainer: {
+    marginTop: 32,
+    paddingHorizontal: 24,
+  },
+
+  container: {
+    flex: 1,
+    padding: 20,
+    paddingTop: 50,
+    backgroundColor: colors.backgroundIvory,
+  },
+
+  backButtonWrapper: {
+    height: 40,
+    width: 40,
+    backgroundColor: colors.lightGray,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  storeDetails: {
+    marginVertical: 20,
+    alignItems: 'center',
+  },
+  storeName: {
+    fontSize: 32,
+    fontFamily: fonts.bold,
+    color: colors.black,
+    textAlign: 'center',
+    letterSpacing: 1.2,
+  },
+  storeAddress: {
+    fontSize: 20,
+    fontFamily: fonts.regular,
+    color: colors.black,
+    textAlign: 'center',
+    marginTop: 5,
+  },
+  card: {
+    backgroundColor: '#ffffff80',
+    padding: 25,
+    borderRadius: 20,
+    alignItems: 'center',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    marginTop: 10,
+    marginVertical: 50,
+  },
+  cardTitle: {
+    fontSize: 22,
+    fontFamily: fonts.semiBold,
+    marginBottom: 15,
+    color: colors.primary,
+    textTransform: 'uppercase',
+  },
+  circleContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+    paddingVertical: 10,
+    gap: 15, // Add spacing between circles
+  },
+  circle: {
+    width: circleSize,
+    height: circleSize,
+    borderRadius: circleSize / 2, // Ensures the circle shape
+    backgroundColor: 'rgba(163, 244, 255, 0.374)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.4,
+    shadowRadius: 5,
+  },
+  filledCircle: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  selectedCircle: {
+    borderColor: 'gold',
+    transform: [{scale: 1.1}],
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)', // Less transparency for better readability
+    padding: 25,
+    borderRadius: 20,
+    alignItems: 'center',
+    width: '85%',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontFamily: fonts.bold,
+    marginBottom: 10,
+    color: colors.primary, // Use primary color or a dark color
+  },
+
+  modalText: {
+    fontSize: 16,
+    fontFamily: fonts.regular,
+    color: '#333', // Dark gray for readability
+    textAlign: 'center',
+  },
+
+  cancelText: {
+    color: colors.primary, // Keep it noticeable
+    fontSize: 16,
+    marginTop: 10,
+    fontWeight: 'bold',
+  },
+  input: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: colors.secondary,
+    borderRadius: 12,
+    padding: 14,
+    textAlign: 'center',
+    fontSize: 18,
+    marginBottom: 15,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    color: '#000000',
+  },
+  verifyButton: {
+    width: '50%',
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginTop: 5,
+  },
+  gradientButton: {
+    width: '100%',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 20,
+    fontFamily: fonts.semiBold,
+    textAlign: 'center',
+    padding: 12,
+    textTransform: 'uppercase',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 10,
+    borderRadius: 20,
+  },
+  closeText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  statusOverlay: {
+    position: 'absolute',
+    top: '40%',
+    left: '50%',
+    transform: [{translateX: -40}, {translateY: -40}],
+    backgroundColor: 'rgba(255, 255, 255, 0)',
+    padding: 20,
+    borderRadius: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 5,
+  },
+  overlayContainer: {
+    alignItems: 'center',
+  },
+  overlayText: {
+    marginTop: 10,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  linkText: {
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+  },
+});
+
+export default PassdetailsScreen;

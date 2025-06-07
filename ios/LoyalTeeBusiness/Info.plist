@@ -5,11 +5,18 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>LoyalTeeBusiness</string>
+	<string>LoyalTee Business</string>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
 	<key>NSCameraUsageDescription</key>
 	<string>We need camera access to scan QR codes</string>
 	<key>UIAppFonts</key>
 	<array>
+	<key>UIDeviceFamily</key>
+	<array>
+    <integer>1</integer>
+    <integer>2</integer>
+	</array>
   	<string>MaterialIcons.ttf</string>
 	</array>
 	<key>CFBundleExecutable</key>
