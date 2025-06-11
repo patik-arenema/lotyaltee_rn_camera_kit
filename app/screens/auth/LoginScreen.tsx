@@ -32,8 +32,12 @@ type LoginScreenNavigationProp = NativeStackNavigationProp<
 >;
 
 const schema = yup.object().shape({
-  email: yup.string().email('Invalid email').required('Email is required'),
-  password: yup.string().min(6).required('Password is required'),
+  email: yup
+    .string()
+    .trim()
+    .email('Invalid email')
+    .required('Email is required'),
+  password: yup.string().min(6).trim().required('Password is required'),
 });
 
 export default function LoginScreen() {
@@ -82,20 +86,32 @@ export default function LoginScreen() {
       email: data.email,
       password: data.password,
     };
-    let email = data.email;
     setLoading(true);
+    console.log(apiData);
+
     try {
       const loginResponse = await userLogin(apiData);
 
-      if (loginResponse.status == 200 || loginResponse.status == 201) {
-        await AsyncStorage.setItem('token', loginResponse.data.token);
-        await AsyncStorage.setItem('userId', loginResponse.data.user_id);
-        await AsyncStorage.setItem('storeId', loginResponse.data.store_id);
-        await AsyncStorage.setItem('storeName', loginResponse.data.store_name);
+      console.log(loginResponse);
 
-        handleRedirection();
-      }
-      {
+      if (loginResponse.status == 200 || loginResponse.status == 201) {
+        if (loginResponse.data.role_name !== 'customer') {
+          await AsyncStorage.setItem('token', loginResponse.data.token);
+          await AsyncStorage.setItem('userId', loginResponse.data.user_id);
+          await AsyncStorage.setItem('storeId', loginResponse.data.store_id);
+          await AsyncStorage.setItem(
+            'storeName',
+            loginResponse.data.store_name,
+          );
+          handleRedirection();
+        } else {
+          setError('password', {
+            type: 'manual',
+            message: 'This user is not a Store Admin',
+          });
+          return;
+        }
+      } else {
         setError('password', {
           type: 'manual',
           message: loginResponse?.message || 'Login failed. Try again.',
@@ -107,6 +123,11 @@ export default function LoginScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleForgotPass = () => {
+    reset();
+    navigation.navigate('ForgotPassword');
   };
 
   const handleSignup = () => {
@@ -126,10 +147,6 @@ export default function LoginScreen() {
     setUnsubscribe(() => newUnsubscribe);
   };
 
-  const handleForgotPass = () => {
-    reset();
-    navigation.navigate('ForgotPassword');
-  };
   useEffect(() => {
     const unsubscribeNetInfo = NetInfo.addEventListener(state => {
       setIsConnected(!!state.isConnected);
@@ -174,7 +191,7 @@ export default function LoginScreen() {
 
         <View style={styles.footer}>
           <TouchableOpacity onPress={handleForgotPass}>
-            <Text style={{color: colors.primary}}>Forgot Passowrd?</Text>
+            <Text style={{color: colors.primary}}>Forgot Password?</Text>
           </TouchableOpacity>
         </View>
         <TouchableOpacity

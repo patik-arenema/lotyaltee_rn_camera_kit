@@ -10,6 +10,7 @@ import UpdatePasswordScreen from '../screens/auth/UpdatePasswordScreen';
 import OTPScreen from '../screens/auth/OTPScreen';
 
 import DrawerNavigator from './DrawerNavigator'; // for post-login navigation
+import UserPassHistory from '../screens/pass/UserPassHistory';
 
 const Stack = createNativeStackNavigator();
 
@@ -22,6 +23,7 @@ export default function RootNavigator() {
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="UpdatePassword" component={UpdatePasswordScreen} />
       <Stack.Screen name="OTPScreen" component={OTPScreen} />
+      <Stack.Screen name="UserHistory" component={UserPassHistory} />
 
       <Stack.Screen name="DrawerNavigator" component={DrawerNavigator} />
     </Stack.Navigator>

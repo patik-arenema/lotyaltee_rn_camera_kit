@@ -1,4 +1,5 @@
-import React, {useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
+import NetInfo from '@react-native-community/netinfo';
 import {
   ActivityIndicator,
   Alert,
@@ -21,6 +22,7 @@ import InputField from '../../../components/formComponents/InputField';
 import {colors} from '../../../utils/colors';
 import {fonts} from '../../../utils/fonts';
 import {Lock, Mail} from 'lucide-react-native';
+import Offline from '../../../components/Offline';
 
 const ForgotPasswordScreen = () => {
   const [step, setStep] = useState<'email' | 'otp' | 'new-password'>('email');
@@ -31,6 +33,12 @@ const ForgotPasswordScreen = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const inputsRef = useRef<(TextInput | null)[]>([]);
   const navigation = useNavigation();
+  const [isConnected, setIsConnected] = useState(true);
+  const [unsubscribe, setUnsubscribe] = useState<(() => void) | null>(null);
+
+  // ⏱️ Resend OTP timer
+  const [resendTimer, setResendTimer] = useState(60);
+  const resendInterval = useRef<NodeJS.Timeout | null>(null);
 
   const {
     control,
@@ -40,6 +48,21 @@ const ForgotPasswordScreen = () => {
     reset,
     formState: {errors},
   } = useForm();
+
+  const startResendTimer = () => {
+    setResendTimer(60);
+    if (resendInterval.current) clearInterval(resendInterval.current);
+
+    resendInterval.current = setInterval(() => {
+      setResendTimer(prev => {
+        if (prev <= 1 && resendInterval.current) {
+          clearInterval(resendInterval.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
 
   const handleOtpChange = (text: string, index: number) => {
     if (/^\d$/.test(text)) {
@@ -60,6 +83,19 @@ const ForgotPasswordScreen = () => {
     }
   };
 
+  const handleRetry = async () => {
+    if (unsubscribe) unsubscribe();
+
+    const netState = await NetInfo.fetch();
+    setIsConnected(!!netState.isConnected);
+
+    const newUnsubscribe = NetInfo.addEventListener(state => {
+      setIsConnected(!!netState.isConnected);
+    });
+
+    setUnsubscribe(() => newUnsubscribe);
+  };
+
   const onSubmitEmail = async (data: any) => {
     clearErrors();
     setErrorMessage('');
@@ -69,6 +105,7 @@ const ForgotPasswordScreen = () => {
       if (response.status === 200) {
         setEmailValue(data.email);
         setStep('otp');
+        startResendTimer(); // start countdown
       } else {
         setError('email', {
           type: 'manual',
@@ -122,7 +159,6 @@ const ForgotPasswordScreen = () => {
       });
       if (response.status === 200) {
         Alert.alert('Success', 'Password reset successful. Please log in.');
-        // navigation.navigate('Login' as never);
         navigation.dispatch(
           CommonActions.reset({
             index: 0,
@@ -149,6 +185,20 @@ const ForgotPasswordScreen = () => {
     reset();
     setStep('email');
   };
+
+  useEffect(() => {
+    const unsubscribeNetInfo = NetInfo.addEventListener(state => {
+      setIsConnected(!!state.isConnected);
+    });
+    setUnsubscribe(() => unsubscribeNetInfo);
+
+    return () => {
+      unsubscribeNetInfo();
+      if (resendInterval.current) clearInterval(resendInterval.current);
+    };
+  }, []);
+
+  if (!isConnected) return <Offline retryAction={handleRetry} />;
 
   return (
     <KeyboardAvoidingView
@@ -220,11 +270,27 @@ const ForgotPasswordScreen = () => {
               <Text style={styles.buttonText}>Verify OTP</Text>
             )}
           </TouchableOpacity>
+
           <View style={styles.footer}>
             <TouchableOpacity onPress={handleChangeEmail}>
               <Text style={{color: colors.primary}}>Change Email</Text>
             </TouchableOpacity>
           </View>
+
+          {resendTimer > 0 ? (
+            <Text style={styles.resendText}>Resend OTP in {resendTimer}s</Text>
+          ) : (
+            <TouchableOpacity
+              onPress={() => {
+                let data = {email: emailValue};
+                onSubmitEmail(data);
+                startResendTimer();
+              }}>
+              <Text style={[styles.resendText, {color: colors.primary}]}>
+                Resend OTP
+              </Text>
+            </TouchableOpacity>
+          )}
         </>
       )}
 
@@ -320,6 +386,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: 20,
+  },
+  resendText: {
+    textAlign: 'center',
+    marginTop: 16,
+    fontFamily: fonts.medium,
+    color: 'gray',
   },
 });
 

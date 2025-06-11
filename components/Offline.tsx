@@ -9,27 +9,25 @@ import {
 } from 'react-native';
 import {colors} from '../utils/colors';
 import {fonts} from '../utils/fonts';
+import {WifiOff} from 'lucide-react-native';
 
 const {width, height} = Dimensions.get('window');
 
 const Offline = ({retryAction}: any) => {
   return (
-    <ImageBackground
-      source={require('../assets/images/bg7.jpg')}
-      style={styles.mainBackgroundImage}>
-      <View style={styles.container}>
-        <Text style={styles.title}>No Internet Connection</Text>
-        <Text style={styles.subtitle}>
-          Please check your connection and try again.
-        </Text>
+    <View style={styles.container}>
+      <WifiOff />
+      <Text style={styles.title}>No Internet Connection</Text>
+      <Text style={styles.subtitle}>
+        Please check your connection and try again.
+      </Text>
 
-        <TouchableOpacity
-          style={styles.retryButton}
-          onPress={() => retryAction()}>
-          <Text style={styles.retryText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    </ImageBackground>
+      <TouchableOpacity
+        style={styles.retryButton}
+        onPress={() => retryAction()}>
+        <Text style={styles.retryText}>Retry</Text>
+      </TouchableOpacity>
+    </View>
   );
 };
 
@@ -39,6 +37,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
+    backgroundColor: colors.backgroundIvory,
   },
   mainBackgroundImage: {
     flex: 1,
@@ -48,7 +47,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontFamily: fonts.bold,
-    color: colors.white,
+    color: colors.black,
     textAlign: 'center',
     marginBottom: 10,
   },

@@ -54,8 +54,12 @@ export const getUserStampsHistory = async () => {
   return handleRequest(() => http.post(`/stamps/history?user_id=${userId}`));
 };
 
+export const getUserCardsHistory = (data:any) => {
+  return handleRequest(()=>http.post(`/store-admin/cards/user`,data))
+}
+
 export const updateStampCard = (data:any) =>
-  handleRequest(() => http.post(`/card/update`, data));
+  handleRequest(() => http.post(`/store-admin/update-stamp`, data));
 
 export const getCardDetailsById = (id:string) =>
   handleRequest(() => http.get(`/card/user-details?card_uuid=${id}`));
@@ -78,4 +82,37 @@ export const cardsGeneratedData = async (data: any) => {
   let storeId = await AsyncStorage.getItem("storeId")
   return handleRequest(() => http.post(`/store-admin/card-generated/count?store_id=${storeId}`, data))};  
 
+export const stampsMarkedData = async (data: any) => {
+  let storeId = await AsyncStorage.getItem("storeId")
+  return handleRequest(() => http.post(`/store-admin/stamp-marked/count?store_id=${storeId}`, data))};  
 
+export const customerVisitedData = async (data: any) => {
+  let storeId = await AsyncStorage.getItem("storeId")
+  return handleRequest(() => http.post(`/store-admin/customer-visited/count?store_id=${storeId}`, data))};  
+  
+export const updateStoreSettings = async (formData: FormData) => {
+  try {
+    const response = await http.put(
+      "/store-admin/store/settings",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    return {
+      success: true,
+      data: response.data,
+      status: response.status,
+    };
+  } catch (error: any) {
+    console.error("Store settings update error:", error);
+    return {
+      success: false,
+      status: error?.response?.status || 500,
+      message: error?.response?.data?.message || error.message,
+    };
+  }
+};

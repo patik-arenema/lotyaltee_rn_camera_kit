@@ -10,33 +10,59 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 import QRScanner from '../../../QRScanner';
 import {Camera} from 'react-native-camera-kit';
-import {getCardDetailsById, getStoreById} from '../../../services/api/api';
+import {
+  getCardDetailsById,
+  getStoreById,
+  getUserCardsHistory,
+  updateStampCard,
+} from '../../../services/api/api';
+import {ActivityIndicator} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {colors} from '../../../utils/colors';
 import {fonts} from '../../../utils/fonts';
 import {StampsDetailsType, StoreDetailsType} from '../../types/passDetails';
+import {useNavigation} from '@react-navigation/native';
+import {RootStackParamList} from '../../types/navigation';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import Offline from '../../../components/Offline';
 const {width, height} = Dimensions.get('window');
 const circleSize = width / 4.5;
+type ScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'UserHistory'
+>;
+
 const PassdetailsScreen = () => {
+  const navigation = useNavigation<ScreenNavigationProp>();
+
   const [showCamera, setShowCamera] = useState(false);
   const [scannedQR, setScannedQR] = useState(false);
   const [passDetails, setPassDetails] = useState<StampsDetailsType>();
   const [storeDetails, setStoreDetails] = useState<StoreDetailsType>();
+  const [cardId, setCardId] = useState('');
+  const [isConnected, setIsConnected] = useState(true);
+  const [unsubscribe, setUnsubscribe] = useState<(() => void) | null>(null);
+  const [loading, setLoading] = useState(false);
   const cameraRef = useRef<typeof Camera.prototype>(null);
+  const [purchaseCount, setPurchaseCount] = useState(1);
 
   const getUserPassDetails = async (passId: string) => {
     try {
+      setLoading(true);
       const userPassResponse = await getCardDetailsById(passId);
-      console.log(userPassResponse);
+      console.log(userPassResponse.data, 'card details ');
 
       if (userPassResponse.status == 200) {
         setPassDetails(userPassResponse.data);
         setScannedQR(true);
+        setLoading(false);
       }
     } catch (error) {
       console.log(error);
+      setLoading(false);
     }
   };
   const getStoreLocalDetails = async () => {
@@ -49,14 +75,13 @@ const PassdetailsScreen = () => {
       getStoreDetails();
     }
   };
+
   const getStoreDetails = async () => {
     const storeId = (await AsyncStorage.getItem('storeId')) || '';
     console.log(storeId);
 
     try {
-      const storeDataResponse = await getStoreById(
-        'be894d15-fa0d-4f8b-b139-693d5b40fb56',
-      );
+      const storeDataResponse = await getStoreById(storeId);
       if (storeDataResponse.status == 200) {
         setStoreDetails(storeDataResponse.data);
         console.log(storeDataResponse.data);
@@ -69,106 +94,231 @@ const PassdetailsScreen = () => {
       console.log(error);
     }
   };
+
   const handleQRScan = (data: string) => {
     setShowCamera(false);
     if (data.length > 0) {
       getUserPassDetails(data);
+      setCardId(data);
     }
     console.log('QR Code Scanned', data);
   };
   const submit = (image: any) => {
     console.log('Captured image:', image);
   };
+
+  const submitPurchase = async () => {
+    setLoading(true);
+
+    const data = {
+      card_uuid: cardId,
+      purchase_count: String(purchaseCount),
+      redeem_now: false,
+    };
+    console.log(data);
+
+    try {
+      const response = await updateStampCard(data);
+      if (response.status === 200) {
+        console.log(response);
+
+        Alert.alert('Success', 'Purchase submitted successfully');
+        getUserPassDetails(cardId); // Refresh stamp view
+      } else {
+        Alert.alert('Error', 'Failed to submit purchase');
+      }
+    } catch (err) {
+      console.log(err);
+      Alert.alert('Error', 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const historyNavigation = async () => {
+    if (passDetails?.user_id) {
+      await AsyncStorage.setItem('userId', passDetails?.user_id);
+      navigation.navigate('UserHistory');
+    } else {
+      Alert.alert('Please Scan the Pass again');
+    }
+  };
+  const handleRetry = async () => {
+    if (unsubscribe) unsubscribe();
+
+    const netState = await NetInfo.fetch();
+    setIsConnected(!!netState.isConnected);
+
+    const newUnsubscribe = NetInfo.addEventListener(state => {
+      setIsConnected(!!netState.isConnected);
+    });
+
+    setUnsubscribe(() => newUnsubscribe);
+  };
+
+  useEffect(() => {
+    const unsubscribeNetInfo = NetInfo.addEventListener(state => {
+      setIsConnected(!!state.isConnected);
+    });
+    setUnsubscribe(() => unsubscribeNetInfo);
+
+    return () => {
+      unsubscribeNetInfo();
+    };
+  }, []);
+
   useEffect(() => {
     getStoreLocalDetails();
   }, []);
-  return (
-    <View style={styles.container}>
-      <View style={styles.sectionContainer}>
-        <Button title="Scan QR Code" onPress={() => setShowCamera(true)} />
-      </View>
 
-      <QRScanner
-        showCamera={showCamera}
-        setShowCamera={setShowCamera}
-        cameraRef={cameraRef}
-        submit={submit}
-        handleQRCodeScanned={handleQRScan}
-      />
-      {scannedQR ? (
-        <View
-          style={[
-            styles.card,
-            {backgroundColor: storeDetails?.stamp_config.background_color},
-          ]}>
-          <View style={styles.circleContainer}>
-            {[...Array(storeDetails?.stamp_config?.no_of_stamps)].map(
-              (_, index) => (
-                <TouchableOpacity key={index}>
-                  {index < (passDetails?.stamps ?? 0) ? (
-                    <Image
-                      source={require('../../../assets/images/bean.png')}
-                      style={[styles.circle]}
-                    />
-                  ) : index ===
-                    (storeDetails?.stamp_config?.no_of_stamps ?? 0) - 1 ? (
-                    <View
-                      style={[
-                        styles.circle,
-                        storeDetails?.stamp_config?.stamp_shape ===
-                          'square' && {
-                          borderRadius: 8,
-                        },
-                        {
-                          backgroundColor:
-                            storeDetails?.stamp_config?.stamp_fill_color,
-                        },
-                      ]}>
-                      <Text
-                        style={{
-                          color: storeDetails?.stamp_config?.stamp_text_color,
-                        }}>
-                        Free
-                      </Text>
-                    </View>
-                  ) : (
-                    <View
-                      style={[
-                        styles.circle,
-                        storeDetails?.stamp_config?.stamp_shape ===
-                          'square' && {
-                          borderRadius: 8,
-                        },
-                        {
-                          backgroundColor:
-                            storeDetails?.stamp_config?.stamp_fill_color,
-                        },
-                      ]}
-                    />
-                  )}
-                </TouchableOpacity>
-              ),
-            )}
-          </View>
+  if (loading) {
+    return (
+      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+  if (!isConnected) return <Offline retryAction={handleRetry} />;
+  return (
+    <ScrollView style={styles.container}>
+      <View>
+        <View style={styles.sectionContainer}>
+          <Button title="Scan QR Code" onPress={() => setShowCamera(true)} />
         </View>
-      ) : null}
-    </View>
+        <View style={showCamera ? styles.scanner : styles.scanned}>
+          <QRScanner
+            showCamera={showCamera}
+            setShowCamera={setShowCamera}
+            cameraRef={cameraRef}
+            submit={submit}
+            handleQRCodeScanned={handleQRScan}
+          />
+        </View>
+        {!showCamera && passDetails ? (
+          <View
+            style={[
+              styles.card,
+              {backgroundColor: storeDetails?.stamp_config.background_color},
+            ]}>
+            <View style={styles.circleContainer}>
+              {[...Array(storeDetails?.stamp_config?.no_of_stamps)].map(
+                (_, index) => (
+                  <TouchableOpacity key={index}>
+                    {index < (passDetails?.stamps_count ?? 0) ? (
+                      <Image
+                        source={require('../../../assets/images/bean.png')}
+                        style={[styles.circle]}
+                      />
+                    ) : index ===
+                      (storeDetails?.stamp_config?.no_of_stamps ?? 0) - 1 ? (
+                      <View
+                        style={[
+                          styles.circle,
+                          storeDetails?.stamp_config?.stamp_shape ===
+                            'square' && {
+                            borderRadius: 8,
+                          },
+                          {
+                            backgroundColor:
+                              storeDetails?.stamp_config?.stamp_fill_color,
+                          },
+                        ]}>
+                        <Text
+                          style={{
+                            color: storeDetails?.stamp_config?.stamp_text_color,
+                          }}>
+                          Free
+                        </Text>
+                      </View>
+                    ) : (
+                      <View
+                        style={[
+                          styles.circle,
+                          storeDetails?.stamp_config?.stamp_shape ===
+                            'square' && {
+                            borderRadius: 8,
+                          },
+                          {
+                            backgroundColor:
+                              storeDetails?.stamp_config?.stamp_fill_color,
+                          },
+                        ]}
+                      />
+                    )}
+                  </TouchableOpacity>
+                ),
+              )}
+            </View>
+            {scannedQR && passDetails ? (
+              <View style={{marginTop: 20, alignItems: 'center'}}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontFamily: fonts.medium,
+                    marginBottom: 10,
+                  }}>
+                  Purchase Quantity
+                </Text>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    marginBottom: 20,
+                  }}>
+                  <TouchableOpacity
+                    style={styles.qtyButton}
+                    onPress={() =>
+                      setPurchaseCount(prev => Math.max(1, prev - 1))
+                    }>
+                    <Text style={styles.qtyText}>-</Text>
+                  </TouchableOpacity>
+                  <Text style={{marginHorizontal: 20, fontSize: 18}}>
+                    {purchaseCount}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.qtyButton}
+                    onPress={() => setPurchaseCount(prev => prev + 1)}>
+                    <Text style={styles.qtyText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.submitBtn}
+                  onPress={submitPurchase}>
+                  <Text style={styles.submitBtnText}>Submit Purchase</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.submitBtn}
+                  onPress={historyNavigation}>
+                  <Text style={styles.submitBtnText}>User Pass History</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   sectionContainer: {
-    marginTop: 32,
     paddingHorizontal: 24,
   },
 
   container: {
     flex: 1,
-    padding: 20,
-    paddingTop: 50,
+    padding: 25,
     backgroundColor: colors.backgroundIvory,
   },
-
+  scanner: {
+    width: 'auto',
+    height: 500,
+  },
+  scanned: {
+    width: 'auto',
+    height: 0,
+  },
   backButtonWrapper: {
     height: 40,
     width: 40,
@@ -265,7 +415,32 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: colors.primary, // Use primary color or a dark color
   },
-
+  qtyButton: {
+    width: 40,
+    height: 40,
+    backgroundColor: colors.primary,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  qtyText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  submitBtn: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginVertical: 4,
+  },
+  submitBtnText: {
+    color: '#fff',
+    fontSize: 16,
+    fontFamily: fonts.semiBold,
+    textTransform: 'uppercase',
+  },
   modalText: {
     fontSize: 16,
     fontFamily: fonts.regular,

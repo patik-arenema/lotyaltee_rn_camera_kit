@@ -24,7 +24,8 @@ export type StoreDetailsType = {
 export type StampsDetailsType = {
   status: string,
   card_uuid:string,
-  stamps: number,
+  stamps_count: number,
   pending_redeem: number
-
+  user_id: string 
+  store_id:string
 }

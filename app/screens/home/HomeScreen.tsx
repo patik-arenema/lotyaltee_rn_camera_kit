@@ -1,18 +1,52 @@
 import React, {useEffect, useState} from 'react';
 import {ScrollView, StyleSheet} from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
+
 import {
   customerOnboardedData,
   coffeeRedeemedData,
   cardsGeneratedData,
+  stampsMarkedData,
+  customerVisitedData,
 } from '../../../services/api/api'; // Replace with actual import
 import CardWithFilterMenu from '../../../components/CardWithFilter';
 import {useIsFocused} from '@react-navigation/native';
+import {colors} from '../../../utils/colors';
+import Offline from '../../../components/Offline';
 
 const HomeScreen = () => {
   const [onboarded, setOnboarded] = useState(0);
   const [redeemed, setRedeemed] = useState(0);
   const [cards, setCards] = useState(0);
   const [stamps, setStamps] = useState(0);
+  const [customer, setCustomer] = useState(0);
+  const [isConnected, setIsConnected] = useState(true);
+  const [unsubscribe, setUnsubscribe] = useState<(() => void) | null>(null);
+  const handleRetry = async () => {
+    if (unsubscribe) unsubscribe();
+
+    const netState = await NetInfo.fetch();
+    setIsConnected(!!netState.isConnected);
+
+    const newUnsubscribe = NetInfo.addEventListener(state => {
+      setIsConnected(!!netState.isConnected);
+    });
+
+    setUnsubscribe(() => newUnsubscribe);
+  };
+
+  useEffect(() => {
+    const unsubscribeNetInfo = NetInfo.addEventListener(state => {
+      setIsConnected(!!state.isConnected);
+    });
+    setUnsubscribe(() => unsubscribeNetInfo);
+
+    return () => {
+      unsubscribeNetInfo();
+    };
+  }, []);
+
+  if (!isConnected) return <Offline retryAction={handleRetry} />;
 
   const isFocus = useIsFocused();
 
@@ -29,8 +63,11 @@ const HomeScreen = () => {
         const res = await cardsGeneratedData(payload);
         setCards(res?.data?.count || 0);
       } else if (type === 'stamps') {
-        // You may implement stamp logic similarly.
-        setStamps(10); // Placeholder
+        const res = await stampsMarkedData(payload);
+        setStamps(res?.data?.count || 0);
+      } else if (type === 'customer') {
+        const res = await customerVisitedData(payload);
+        setCustomer(res?.data?.count || 0);
       }
     } catch (err) {
       console.error(`Error fetching ${type} data`, err);
@@ -46,6 +83,7 @@ const HomeScreen = () => {
       fetchData('redeemed', 'THIS_WEEK');
       fetchData('cards', 'THIS_WEEK');
       fetchData('stamps', 'THIS_WEEK');
+      fetchData('customer', 'THIS_WEEK');
     }
   }, [isFocus]);
   return (
@@ -70,6 +108,11 @@ const HomeScreen = () => {
         value={stamps}
         onFilterChange={range => fetchData('stamps', range)}
       />
+      <CardWithFilterMenu
+        title="Customer Visited"
+        value={customer}
+        onFilterChange={range => fetchData('customer', range)}
+      />
     </ScrollView>
   );
 };
@@ -78,7 +121,7 @@ export default HomeScreen;
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: colors.backgroundIvory,
     flex: 1,
-    backgroundColor: '#f9fafb',
   },
 });

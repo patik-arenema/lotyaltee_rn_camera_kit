@@ -1,6 +1,4 @@
-import React, {useEffect, useState} from 'react';
-import NetInfo from '@react-native-community/netinfo';
-
+import React, {useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -17,10 +15,6 @@ import {useForm} from 'react-hook-form';
 import * as yup from 'yup';
 import {yupResolver} from '@hookform/resolvers/yup';
 
-import {userRegister} from '../../../services/api/api';
-import InputField from '../../../components/formComponents/InputField';
-import {colors} from '../../../utils/colors';
-import {fonts} from '../../../utils/fonts';
 import {CommonActions, useNavigation} from '@react-navigation/native';
 import {
   Contact,
@@ -33,9 +27,14 @@ import {
   Store,
   User,
 } from 'lucide-react-native';
-import {RootStackParamList} from '../../types/navigation';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import Offline from '../../../components/Offline';
+import {RootStackParamList} from '../app/types/navigation';
+import {userRegister} from '../services/api/api';
+import InputField from './formComponents/InputField';
+import {colors} from '../utils/colors';
+import {fonts} from '../utils/fonts';
+
+import * as ImagePicker from 'react-native-image-picker';
 
 type RegistercreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -68,14 +67,24 @@ const schema = yup.object({
   address: yup.string().required('Address is required'),
 });
 
-export default function RegisterScreen() {
+export default function StoreConfigForm({submitConfigurationData}: any) {
   const navigation = useNavigation<RegistercreenNavigationProp>();
   const [secureEntry, setSecureEntry] = useState(true);
   const [confirmSecureEntry, setConfirmSecureEntry] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [isConnected, setIsConnected] = useState(true);
-  const [unsubscribe, setUnsubscribe] = useState<(() => void) | null>(null);
+  const [selectedImage, setSelectedImage] = useState<any>(null);
 
+  const pickImage = () => {
+    ImagePicker.launchImageLibrary(
+      {mediaType: 'photo', quality: 0.8},
+      response => {
+        if (response.didCancel) return;
+        if (response.assets && response.assets.length > 0) {
+          setSelectedImage(response.assets[0]);
+        }
+      },
+    );
+  };
   const {
     control,
     handleSubmit,
@@ -145,32 +154,6 @@ export default function RegisterScreen() {
     }
   };
 
-  const handleRetry = async () => {
-    if (unsubscribe) unsubscribe();
-
-    const netState = await NetInfo.fetch();
-    setIsConnected(!!netState.isConnected);
-
-    const newUnsubscribe = NetInfo.addEventListener(state => {
-      setIsConnected(!!netState.isConnected);
-    });
-
-    setUnsubscribe(() => newUnsubscribe);
-  };
-
-  useEffect(() => {
-    const unsubscribeNetInfo = NetInfo.addEventListener(state => {
-      setIsConnected(!!state.isConnected);
-    });
-    setUnsubscribe(() => unsubscribeNetInfo);
-
-    return () => {
-      unsubscribeNetInfo();
-    };
-  }, []);
-
-  if (!isConnected) return <Offline retryAction={handleRetry} />;
-
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -179,45 +162,7 @@ export default function RegisterScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}>
-        <Image
-          source={require('../../../assets/images/logo4.png')}
-          style={styles.logo}
-        />
-        <Text style={styles.title}>Create Account</Text>
-
-        {/* Basic Fields */}
-        <InputField
-          control={control}
-          name="name"
-          placeholder="Name"
-          icon={<User size={20} color="gray" />}
-          error={errors.name?.message}
-        />
-        <InputField
-          control={control}
-          name="email"
-          placeholder="Email"
-          icon={<Mail size={20} color="gray" />}
-          error={errors.email?.message}
-        />
-        <InputField
-          control={control}
-          name="password"
-          placeholder="Password"
-          secureTextEntry={secureEntry}
-          toggleSecure={() => setSecureEntry(prev => !prev)}
-          icon={<Lock size={20} color="gray" />}
-          error={errors.password?.message}
-        />
-        <InputField
-          control={control}
-          name="confirmPassword"
-          placeholder="Confirm Password"
-          secureTextEntry={confirmSecureEntry}
-          toggleSecure={() => setConfirmSecureEntry(prev => !prev)}
-          icon={<Lock size={20} color="gray" />}
-          error={errors.confirmPassword?.message}
-        />
+        <Text style={styles.title}>Store Details</Text>
 
         {/* Store Info */}
         <InputField
@@ -276,7 +221,22 @@ export default function RegisterScreen() {
           icon={<MapPinHouse size={20} color="gray" />}
           error={errors.address?.message}
         />
-
+        <TouchableOpacity onPress={pickImage} style={{marginBottom: 10}}>
+          <Text style={{color: colors.primary, textAlign: 'center'}}>
+            {selectedImage ? 'Change Image' : 'Pick Store Image'}
+          </Text>
+        </TouchableOpacity>
+        {selectedImage && (
+          <Image
+            source={{uri: selectedImage.uri}}
+            style={{
+              width: 120,
+              height: 120,
+              alignSelf: 'center',
+              marginBottom: 20,
+            }}
+          />
+        )}
         {/* Submit */}
         <TouchableOpacity
           style={styles.button}
@@ -284,16 +244,9 @@ export default function RegisterScreen() {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Register</Text>
+            <Text style={styles.buttonText}>Submit</Text>
           )}
         </TouchableOpacity>
-
-        <View style={styles.footer}>
-          <Text>Already have an account? </Text>
-          <TouchableOpacity onPress={handleLogin}>
-            <Text style={{color: colors.primary}}>Login</Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
