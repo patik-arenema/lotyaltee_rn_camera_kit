@@ -22,6 +22,7 @@ const StampCardPreview = ({stamp_config}: Props) => {
   return (
     <View
       style={[styles.card, {backgroundColor: stamp_config.background_color}]}>
+        <Text style={[styles.cardTitle,{color:stamp_config.label_color}]}>Stamp Card</Text>
       <View style={styles.circleContainer}>
         {[...Array(stamp_config?.no_of_stamps)].map((_, index) => (
           <TouchableOpacity key={index}>
@@ -103,10 +104,10 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   card: {
-    backgroundColor: '#ffffff80',
     padding: 25,
     borderRadius: 20,
     alignItems: 'center',
+    justifyContent:"center",
     elevation: 10,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 4},
@@ -125,9 +126,9 @@ const styles = StyleSheet.create({
   circleContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     paddingVertical: 10,
-    gap: 15, // Add spacing between circles
+    gap: 15, 
   },
   circle: {
     width: circleSize,

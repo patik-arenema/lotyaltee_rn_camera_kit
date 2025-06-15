@@ -1,34 +1,38 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Button,
   Dimensions,
   Image,
+  Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
-import QRScanner from '../../../QRScanner';
-import {Camera} from 'react-native-camera-kit';
+import QRScanner from '../../../components/QRScanner';
+import { Camera } from 'react-native-camera-kit';
 import {
   getCardDetailsById,
   getStoreById,
   getUserCardsHistory,
+  redeemStampCard,
   updateStampCard,
 } from '../../../services/api/api';
-import {ActivityIndicator} from 'react-native';
+import { ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {colors} from '../../../utils/colors';
-import {fonts} from '../../../utils/fonts';
-import {StampsDetailsType, StoreDetailsType} from '../../types/passDetails';
-import {useNavigation} from '@react-navigation/native';
-import {RootStackParamList} from '../../types/navigation';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import { colors } from '../../../utils/colors';
+import { fonts } from '../../../utils/fonts';
+import { StampsDetailsType, StoreDetailsType } from '../../types/passDetails';
+import { useNavigation } from '@react-navigation/native';
+import { RootStackParamList } from '../../types/navigation';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Offline from '../../../components/Offline';
-const {width, height} = Dimensions.get('window');
+import { Modal } from 'react-native';
+const { width, height } = Dimensions.get('window');
 const circleSize = width / 4.5;
 type ScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -38,7 +42,7 @@ type ScreenNavigationProp = NativeStackNavigationProp<
 const PassdetailsScreen = () => {
   const navigation = useNavigation<ScreenNavigationProp>();
 
-  const [showCamera, setShowCamera] = useState(false);
+  const [showCamera, setShowCamera] = useState(true);
   const [scannedQR, setScannedQR] = useState(false);
   const [passDetails, setPassDetails] = useState<StampsDetailsType>();
   const [storeDetails, setStoreDetails] = useState<StoreDetailsType>();
@@ -48,6 +52,9 @@ const PassdetailsScreen = () => {
   const [loading, setLoading] = useState(false);
   const cameraRef = useRef<typeof Camera.prototype>(null);
   const [purchaseCount, setPurchaseCount] = useState(1);
+  const [redeemCount, setRedeemCount] = useState(0)
+  const [redeemDialogBox, setRedeemDialogBox] = useState(false)
+  const [redeemPass, setRedeemPass] = useState(false)
 
   const getUserPassDetails = async (passId: string) => {
     try {
@@ -65,16 +72,7 @@ const PassdetailsScreen = () => {
       setLoading(false);
     }
   };
-  const getStoreLocalDetails = async () => {
-    let storeData = await AsyncStorage.getItem('storeData');
-    if (storeData) {
-      let parsedStoreData = await JSON.parse(storeData);
-      setStoreDetails(parsedStoreData);
-      console.log(storeData);
-    } else {
-      getStoreDetails();
-    }
-  };
+
 
   const getStoreDetails = async () => {
     const storeId = (await AsyncStorage.getItem('storeId')) || '';
@@ -109,11 +107,10 @@ const PassdetailsScreen = () => {
 
   const submitPurchase = async () => {
     setLoading(true);
-
     const data = {
       card_uuid: cardId,
       purchase_count: String(purchaseCount),
-      redeem_now: false,
+      redeem_now: redeemPass,
     };
     console.log(data);
 
@@ -156,6 +153,32 @@ const PassdetailsScreen = () => {
     setUnsubscribe(() => newUnsubscribe);
   };
 
+  const submitRedeem=async ()=>{
+    const apiData ={
+      "store_id": passDetails?.store_id,
+  "user_id": passDetails?.user_id,
+  "redeem_count": redeemCount
+    }
+    try {
+      const redeemResponse = await redeemStampCard(apiData)
+      if (redeemResponse.status==200) {
+        Alert.alert('Success', 'Card(s) redeemed successfully');
+        getUserPassDetails(cardId); 
+        setRedeemDialogBox(false)
+      }
+      Alert.alert(redeemResponse.message)
+    } catch (error) {
+      console.log(error);
+      
+    }
+  }
+  const totalCount = () => {
+    let res = purchaseCount + Number(passDetails?.stamps_count) >= Number(storeDetails?.stamp_config?.no_of_stamps)
+    return res
+
+  }
+  console.log(redeemPass);
+  
   useEffect(() => {
     const unsubscribeNetInfo = NetInfo.addEventListener(state => {
       setIsConnected(!!state.isConnected);
@@ -168,12 +191,17 @@ const PassdetailsScreen = () => {
   }, []);
 
   useEffect(() => {
-    getStoreLocalDetails();
+    getStoreDetails();
   }, []);
+
+  useEffect(() => {
+    totalCount()
+  }, [purchaseCount])
+
 
   if (loading) {
     return (
-      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -181,9 +209,57 @@ const PassdetailsScreen = () => {
   if (!isConnected) return <Offline retryAction={handleRetry} />;
   return (
     <ScrollView style={styles.container}>
+       <Modal
+      visible={redeemDialogBox}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setRedeemDialogBox(false)}
+    >
+      <Pressable
+        style={styles.modalOverlay}
+        onPress={() => setRedeemDialogBox(false)}
+      />
+      <View style={styles.dialogBox}>
+        <Text style={styles.title}>Redeem Count</Text>
+
+        <View style={styles.buttonCard}>
+          <TouchableOpacity
+            style={styles.qtyButton}
+            onPress={() => setRedeemCount(prev => Math.max(0, prev - 1))}
+          >
+            <Text style={styles.qtyText}>-</Text>
+          </TouchableOpacity>
+          <Text style={styles.qtyValue}>{redeemCount}</Text>
+          <TouchableOpacity
+            style={styles.qtyButton}
+            onPress={() => {
+              if (redeemCount <= Number(passDetails?.pending_redeem)) {
+                setRedeemCount(prev => prev + 1);
+              }
+            }}
+          >
+            <Text style={styles.qtyText}>+</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity
+          style={[styles.submitBtn, { marginTop: 20 }]}
+          onPress={() => submitRedeem()}
+        >
+          <Text style={styles.submitBtnText}>Submit</Text>
+        </TouchableOpacity>
+      </View>
+    </Modal>
       <View>
         <View style={styles.sectionContainer}>
-          <Button title="Scan QR Code" onPress={() => setShowCamera(true)} />
+          <TouchableOpacity
+            onPress={() => setShowCamera(true)}
+            style={styles.submitBtn}
+          >
+            <Text style={{ paddingVertical: 4, fontSize: 16, color: colors.white }}>
+              Scan QR Code
+            </Text>
+          </TouchableOpacity>
         </View>
         <View style={showCamera ? styles.scanner : styles.scanned}>
           <QRScanner
@@ -198,7 +274,7 @@ const PassdetailsScreen = () => {
           <View
             style={[
               styles.card,
-              {backgroundColor: storeDetails?.stamp_config.background_color},
+              { backgroundColor: storeDetails?.stamp_config.background_color },
             ]}>
             <View style={styles.circleContainer}>
               {[...Array(storeDetails?.stamp_config?.no_of_stamps)].map(
@@ -215,7 +291,7 @@ const PassdetailsScreen = () => {
                         style={[
                           styles.circle,
                           storeDetails?.stamp_config?.stamp_shape ===
-                            'square' && {
+                          'square' && {
                             borderRadius: 8,
                           },
                           {
@@ -235,7 +311,7 @@ const PassdetailsScreen = () => {
                         style={[
                           styles.circle,
                           storeDetails?.stamp_config?.stamp_shape ===
-                            'square' && {
+                          'square' && {
                             borderRadius: 8,
                           },
                           {
@@ -249,51 +325,80 @@ const PassdetailsScreen = () => {
                 ),
               )}
             </View>
-            {scannedQR && passDetails ? (
-              <View style={{marginTop: 20, alignItems: 'center'}}>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontFamily: fonts.medium,
-                    marginBottom: 10,
-                  }}>
-                  Purchase Quantity
-                </Text>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginBottom: 20,
-                  }}>
-                  <TouchableOpacity
-                    style={styles.qtyButton}
-                    onPress={() =>
-                      setPurchaseCount(prev => Math.max(1, prev - 1))
-                    }>
-                    <Text style={styles.qtyText}>-</Text>
-                  </TouchableOpacity>
-                  <Text style={{marginHorizontal: 20, fontSize: 18}}>
-                    {purchaseCount}
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.qtyButton}
-                    onPress={() => setPurchaseCount(prev => prev + 1)}>
-                    <Text style={styles.qtyText}>+</Text>
-                  </TouchableOpacity>
-                </View>
+          </View>
+        ) : null}
+        {scannedQR && passDetails ? (
+          <View style={styles.purchaseContainer}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontFamily: fonts.medium,
+                marginBottom: 10,
+              }}>
+              Purchase Quantity
+            </Text>
+            <View
+              style={styles.buttonCard}>
+              <TouchableOpacity
+                style={styles.qtyButton}
+                onPress={() =>
+                  setPurchaseCount(prev => Math.max(1, prev - 1))
+                }>
+                <Text style={styles.qtyText}>-</Text>
+              </TouchableOpacity>
+              <Text style={{ marginHorizontal: 20, fontSize: 18 }}>
+                {purchaseCount}
+              </Text>
+              <TouchableOpacity
+                style={styles.qtyButton}
+                onPress={(e) => {
+                  if (purchaseCount < (storeDetails?.stamp_config?.no_of_stamps || 9)) {
+                    setPurchaseCount(prev => prev + 1)
 
+                  }
+                }}>
+
+                <Text style={styles.qtyText}>+</Text>
+              </TouchableOpacity>
+            </View>
+            {totalCount() ?
+              <View style={{ flexDirection: 'column', alignItems: 'center', marginTop: 10,gap:10 }}>
+                <Text style={{ marginLeft: 10 }}>User has earned a free coffee </Text>
+                <Text style={{ marginLeft: 10 }}>Redeem This Stamp Card </Text>
+                <Switch
+                  value={redeemPass}
+                  onValueChange={setRedeemPass}
+                  thumbColor={redeemPass ? '#34C759' : '#ccc'}
+                  trackColor={{ false: '#fff', true: '#81b0ff' }}
+                />
+              </View> : null
+            }
+            <TouchableOpacity
+              style={styles.submitBtn}
+              onPress={submitPurchase}>
+              <Text style={styles.submitBtnText}>Submit Purchase</Text>
+            </TouchableOpacity>
+
+          </View>
+        ) : null}
+        {scannedQR && passDetails ? (
+          <View style={styles.purchaseContainer}>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={styles.submitBtn}
+                onPress={historyNavigation}>
+                <Text style={styles.submitBtnText}>Pass History</Text>
+              </TouchableOpacity>
+              {passDetails?.pending_redeem > 0 ?
                 <TouchableOpacity
                   style={styles.submitBtn}
-                  onPress={submitPurchase}>
-                  <Text style={styles.submitBtnText}>Submit Purchase</Text>
+                  onPress={() => {
+                    setRedeemDialogBox(true)
+                  }}>
+                  <Text style={styles.submitBtnText}>Redeem Pass</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.submitBtn}
-                  onPress={historyNavigation}>
-                  <Text style={styles.submitBtnText}>User Pass History</Text>
-                </TouchableOpacity>
-              </View>
-            ) : null}
+                : null}
+            </View>
           </View>
         ) : null}
       </View>
@@ -304,8 +409,35 @@ const PassdetailsScreen = () => {
 const styles = StyleSheet.create({
   sectionContainer: {
     paddingHorizontal: 24,
+    paddingBottom: 10,
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center"
   },
+  purchaseContainer: {
+    backgroundColor: colors.white,
+    padding: 20,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    marginBottom: 20,
+    alignItems: 'center',
+    borderRadius: 20
+  },
+  buttonContainer: {
+    marginTop: 20,
+    alignItems: 'center',
 
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+  },
+  buttonCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   container: {
     flex: 1,
     padding: 25,
@@ -352,7 +484,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 10,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
     marginTop: 10,
@@ -382,7 +514,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: 'rgba(255, 255, 255, 0.5)',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.4,
     shadowRadius: 5,
   },
@@ -392,7 +524,7 @@ const styles = StyleSheet.create({
   },
   selectedCircle: {
     borderColor: 'gold',
-    transform: [{scale: 1.1}],
+    transform: [{ scale: 1.1 }],
   },
   modalContainer: {
     flex: 1,
@@ -418,7 +550,7 @@ const styles = StyleSheet.create({
   qtyButton: {
     width: 40,
     height: 40,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.button,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
@@ -427,9 +559,10 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 24,
     fontWeight: 'bold',
+    
   },
   submitBtn: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.button,
     paddingHorizontal: 30,
     paddingVertical: 12,
     borderRadius: 12,
@@ -502,7 +635,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '40%',
     left: '50%',
-    transform: [{translateX: -40}, {translateY: -40}],
+    transform: [{ translateX: -40 }, { translateY: -40 }],
     backgroundColor: 'rgba(255, 255, 255, 0)',
     padding: 20,
     borderRadius: 50,
@@ -521,6 +654,31 @@ const styles = StyleSheet.create({
   linkText: {
     textAlign: 'center',
     textDecorationLine: 'underline',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: '#00000066',
+  },
+  dialogBox: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFF',
+    padding: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 16,
+    fontFamily: fonts.medium,
+    marginBottom: 10,
+  },
+  qtyValue: {
+    fontSize: 18,
+    paddingHorizontal:20,
+    fontWeight: '600',
   },
 });
 

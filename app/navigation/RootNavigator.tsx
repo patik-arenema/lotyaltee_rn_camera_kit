@@ -8,9 +8,10 @@ import RegisterScreen from '../screens/auth/RegisterScreen';
 import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 import UpdatePasswordScreen from '../screens/auth/UpdatePasswordScreen';
 import OTPScreen from '../screens/auth/OTPScreen';
-
-import DrawerNavigator from './DrawerNavigator'; // for post-login navigation
+import BottomTabNavigator from './BottomTabNavigator';
 import UserPassHistory from '../screens/pass/UserPassHistory';
+import StoreConfigScreen from '../screens/store/StoreConfigScreen';
+import StampConfigScreen from '../screens/store/StampConfigScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -21,11 +22,13 @@ export default function RootNavigator() {
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-      <Stack.Screen name="UpdatePassword" component={UpdatePasswordScreen} />
+      <Stack.Screen name="Change Password" component={UpdatePasswordScreen} />
       <Stack.Screen name="OTPScreen" component={OTPScreen} />
       <Stack.Screen name="UserHistory" component={UserPassHistory} />
+      <Stack.Screen name="Main" component={BottomTabNavigator} />
+      <Stack.Screen name="Store Configuration" component={StoreConfigScreen} />
+      <Stack.Screen name="Stamp Configuration" component={StampConfigScreen} />
 
-      <Stack.Screen name="DrawerNavigator" component={DrawerNavigator} />
     </Stack.Navigator>
   );
 }

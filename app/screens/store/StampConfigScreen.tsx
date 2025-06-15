@@ -9,12 +9,14 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import ColorPickerWrapper from './formComponents/ColorPickerWrapper';
-import {fonts} from '../utils/fonts';
-import {colors} from '../utils/colors';
-import {getStoreById, updateStoreSettings} from '../services/api/api';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import StampCardPreview from './StampCardPreview';
+import { getStoreById, updateStoreSettings } from '../../../services/api/api';
+import ColorPickerWrapper from '../../../components/formComponents/ColorPickerWrapper';
+import StampCardPreview from '../../../components/StampCardPreview';
+import { fonts } from '../../../utils/fonts';
+import { colors } from '../../../utils/colors';
+
 
 type StampConfigType = {
   no_of_stamps: number;
@@ -34,7 +36,7 @@ const defaultValues: StampConfigType = {
   stamp_text_color: '#000000',
 };
 
-const StampConfigForm = () => {
+const StampConfigScreen = () => {
   const [config, setConfig] = useState<StampConfigType>(defaultValues);
   const [loading, setLoading] = useState(false);
 
@@ -87,21 +89,6 @@ const StampConfigForm = () => {
     }
   };
 
-  const checkLocalStampData = async () => {
-    const storeData = await AsyncStorage.getItem('storeData');
-    if (storeData) {
-      const parsedData = JSON.parse(storeData);
-      if (parsedData?.stamp_config) {
-        setConfig(parsedData.stamp_config);
-      } else {
-        setConfig(defaultValues);
-      }
-    } else {
-      setConfig(defaultValues);
-    }
-  };
-
-
   const getStoreDetails = async () => {
     const storeId = (await AsyncStorage.getItem('storeId')) || '';
     console.log(storeId);
@@ -110,7 +97,7 @@ const StampConfigForm = () => {
       const storeDataResponse = await getStoreById(storeId);
       if (storeDataResponse.status == 200) {
         setConfig(storeDataResponse.data?.stamp_config);
-        console.log(storeDataResponse.data);
+        console.log("pass dot",storeDataResponse.data);
         AsyncStorage.setItem(
           'storeData',
           JSON.stringify(storeDataResponse.data),
@@ -120,12 +107,12 @@ const StampConfigForm = () => {
       console.log(error);
     }
   };
-
   useEffect(() => {
-    checkLocalStampData();
     getStoreDetails()
-
   }, []);
+
+  console.log(config);
+  
 
   return (
     <View>
@@ -297,4 +284,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default StampConfigForm;
+export default StampConfigScreen;

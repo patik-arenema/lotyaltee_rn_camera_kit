@@ -29,7 +29,7 @@ export default function SplashScreen() {
             index: 0,
             routes: [
               {
-                name: 'DrawerNavigator',
+                name: 'Main',
                 state: {
                   index: 0,
                   routes: [{name: 'Home'}],

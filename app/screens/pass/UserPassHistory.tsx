@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
-    paddingTop: 20,
+    paddingTop: 50,
     backgroundColor: colors.backgroundIvory,
   },
   tabContainer: {

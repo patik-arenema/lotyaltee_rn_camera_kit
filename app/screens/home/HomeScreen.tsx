@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {ScrollView, StyleSheet} from 'react-native';
+import {ScrollView, StyleSheet, View, Dimensions} from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 
 import {
@@ -13,6 +13,9 @@ import CardWithFilterMenu from '../../../components/CardWithFilter';
 import {useIsFocused} from '@react-navigation/native';
 import {colors} from '../../../utils/colors';
 import Offline from '../../../components/Offline';
+
+const {width} = Dimensions.get('window');
+const CARD_MARGIN = 16;
 
 const HomeScreen = () => {
   const [onboarded, setOnboarded] = useState(0);
@@ -88,31 +91,38 @@ const HomeScreen = () => {
   }, [isFocus]);
   return (
     <ScrollView style={styles.container}>
-      <CardWithFilterMenu
-        title="Customer Onboarded"
-        value={onboarded}
-        onFilterChange={range => fetchData('onboarded', range)}
-      />
-      <CardWithFilterMenu
-        title="Card Generated"
-        value={cards}
-        onFilterChange={range => fetchData('cards', range)}
-      />
-      <CardWithFilterMenu
-        title="Coffee Redeemed"
-        value={redeemed}
-        onFilterChange={range => fetchData('redeemed', range)}
-      />
-      <CardWithFilterMenu
-        title="Stamps Marked"
-        value={stamps}
-        onFilterChange={range => fetchData('stamps', range)}
-      />
-      <CardWithFilterMenu
-        title="Customer Visited"
-        value={customer}
-        onFilterChange={range => fetchData('customer', range)}
-      />
+      <View style={styles.cardContainer}> 
+        <CardWithFilterMenu
+          title="Customer Onboarded"
+          value={onboarded}
+          gradient={['#fbc2eb', '#a6c1ee']}
+          onFilterChange={range => fetchData('onboarded', range)}
+        />
+        <CardWithFilterMenu
+          title="Card Generated"
+          value={cards}
+          gradient={['#fceabb', '#f8b500']} 
+          onFilterChange={range => fetchData('cards', range)}
+        />
+        <CardWithFilterMenu
+          title="Coffee Redeemed"
+          value={redeemed}
+          gradient={['#a1c4fd', '#c2e9fb']}
+          onFilterChange={range => fetchData('redeemed', range)}
+        />
+        <CardWithFilterMenu
+          title="Stamps Marked"
+          value={stamps}
+          gradient={['#d4fc79', '#96e6a1']} 
+          onFilterChange={range => fetchData('stamps', range)}
+        />
+        <CardWithFilterMenu
+          title="Customer Visited"
+          value={customer}
+          gradient={['#ffb986', '#bb4d00']} 
+          onFilterChange={range => fetchData('customer', range)}
+        />
+      </View>
     </ScrollView>
   );
 };
@@ -123,5 +133,14 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.backgroundIvory,
     flex: 1,
+  },
+  cardContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: CARD_MARGIN,
+    gap: CARD_MARGIN,
+    marginTop: 10,
+    marginBottom:80,
   },
 });

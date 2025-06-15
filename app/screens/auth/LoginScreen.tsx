@@ -70,7 +70,7 @@ export default function LoginScreen() {
         index: 0,
         routes: [
           {
-            name: 'DrawerNavigator',
+            name: 'Main',
             state: {
               index: 0,
               routes: [{name: 'Home'}],
@@ -95,7 +95,7 @@ export default function LoginScreen() {
       console.log(loginResponse);
 
       if (loginResponse.status == 200 || loginResponse.status == 201) {
-        if (loginResponse.data.role_name !== 'customer') {
+        if (loginResponse.data.role_name == 'store_admin') {
           await AsyncStorage.setItem('token', loginResponse.data.token);
           await AsyncStorage.setItem('userId', loginResponse.data.user_id);
           await AsyncStorage.setItem('storeId', loginResponse.data.store_id);
