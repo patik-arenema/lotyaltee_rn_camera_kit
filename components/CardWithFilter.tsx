@@ -108,6 +108,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     marginTop: 8,
+    paddingVertical:10
   },
   menuButton: {
     position: 'absolute',
@@ -165,7 +166,7 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   value: {
-    fontSize: 89,
+    fontSize: 75,
     fontWeight: '800',
     marginTop: 8,
     color: '#0f172a',

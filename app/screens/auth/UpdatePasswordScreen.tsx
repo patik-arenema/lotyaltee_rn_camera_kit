@@ -20,17 +20,7 @@ import InputField from '../../../components/formComponents/InputField';
 import {colors} from '../../../utils/colors';
 import {fonts} from '../../../utils/fonts';
 import Offline from '../../../components/Offline';
-const schema = yup.object().shape({
-  old_password: yup.string().required('Old password is required'),
-  new_password: yup
-    .string()
-    .min(6, 'New password must be at least 6 characters')
-    .required('New password is required'),
-  confirm_password: yup
-    .string()
-    .oneOf([yup.ref('new_password')], 'Passwords must match')
-    .required('Please confirm your password'),
-});
+import { updatePasswordSchema } from '../../../utils/validationSchema';
 
 export default function UpdatePasswordScreen() {
   const {
@@ -39,7 +29,7 @@ export default function UpdatePasswordScreen() {
     formState: {errors},
     reset,
   } = useForm({
-    resolver: yupResolver(schema),
+    resolver: yupResolver(updatePasswordSchema),
     defaultValues: {
       old_password: '',
       new_password: '',

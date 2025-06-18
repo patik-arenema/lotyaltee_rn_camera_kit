@@ -9,13 +9,14 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-
+import NetInfo from '@react-native-community/netinfo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getStoreById, updateStoreSettings, updateStripImage } from '../../../services/api/api';
 import ColorPickerWrapper from '../../../components/formComponents/ColorPickerWrapper';
 import StampCardPreview from '../../../components/StampCardPreview';
 import { fonts } from '../../../utils/fonts';
 import { colors } from '../../../utils/colors';
+import Offline from '../../../components/Offline';
 
 
 type StampConfigType = {
@@ -39,6 +40,8 @@ const defaultValues: StampConfigType = {
 const StampConfigScreen = () => {
   const [config, setConfig] = useState<StampConfigType>(defaultValues);
   const [loading, setLoading] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
+  const [unsubscribe, setUnsubscribe] = useState<(() => void) | null>(null);
 
   const shapeOptions = [
     { label: 'Circle', value: 'circle' },
@@ -54,16 +57,22 @@ const StampConfigScreen = () => {
 
   const handleSubmit = async () => {
     if (!config) return;
-
+    if (config.no_of_stamps<=0) {
+      Alert.alert("Stamps cannot be 0")
+      return
+    }
     try {
       setLoading(true);
       const formData = new FormData();
       formData.append('no_of_stamps', config.no_of_stamps.toString());
       formData.append('background_color', config.background_color);
+      formData.append('strip_gradient_start_color', config.background_color);
+      formData.append('strip_gradient_end_color', config.background_color);
       formData.append('label_color', config.label_color);
       formData.append('stamp_shape', config.stamp_shape);
       formData.append('stamp_fill_color', config.stamp_fill_color);
       formData.append('stamp_text_color', config.stamp_text_color);
+      
 
       const apiResponse = await updateStoreSettings(formData);
 console.log("this is store update",apiResponse);
@@ -117,11 +126,36 @@ console.log("this is store update",apiResponse);
       console.log(error);
     }
   };
+  const handleRetry = async () => {
+    if (unsubscribe) unsubscribe();
+
+    const netState = await NetInfo.fetch();
+    setIsConnected(!!netState.isConnected);
+
+    const newUnsubscribe = NetInfo.addEventListener(state => {
+      setIsConnected(!!netState.isConnected);
+    });
+
+    setUnsubscribe(() => newUnsubscribe);
+  };
+
+  useEffect(() => {
+    const unsubscribeNetInfo = NetInfo.addEventListener(state => {
+      setIsConnected(!!state.isConnected);
+    });
+    setUnsubscribe(() => unsubscribeNetInfo);
+
+    return () => {
+      unsubscribeNetInfo();
+    };
+  }, []);
+
   useEffect(() => {
     getStoreDetails()
   }, []);
-
+  
   console.log(config);
+  if (!isConnected) return <Offline retryAction={handleRetry} />;
 
 
   return (
@@ -226,8 +260,10 @@ console.log("this is store update",apiResponse);
 const styles = StyleSheet.create({
   container: {
     padding: 16,
+    paddingTop:50,
     backgroundColor: colors.backgroundIvory,
     marginBottom: 50,
+
   },
   label: {
     fontSize: 16,
@@ -292,7 +328,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.secondary,
+    backgroundColor: colors.button,
     paddingVertical: 12,
     borderRadius: 10,
   },

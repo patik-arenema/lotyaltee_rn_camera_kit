@@ -1,7 +1,6 @@
 import React, {useEffect, useState} from 'react';
-import {ScrollView, StyleSheet, View, Dimensions} from 'react-native';
+import {ScrollView, StyleSheet, View,Text, Dimensions} from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
-
 import {
   customerOnboardedData,
   coffeeRedeemedData,
@@ -13,6 +12,8 @@ import CardWithFilterMenu from '../../../components/CardWithFilter';
 import {useIsFocused} from '@react-navigation/native';
 import {colors} from '../../../utils/colors';
 import Offline from '../../../components/Offline';
+import { Gift, GiftIcon, LucideGift, Wallet } from 'lucide-react-native';
+
 
 const {width} = Dimensions.get('window');
 const CARD_MARGIN = 16;
@@ -93,6 +94,10 @@ const HomeScreen = () => {
 
   return (
     <ScrollView style={styles.container}>
+         <View style={styles.header}>
+        <GiftIcon size={32} color={colors.button} />
+        <Text style={styles.headerText}>LoyalTee Business</Text>
+      </View>
       <View style={styles.cardContainer}> 
         <CardWithFilterMenu
           title="Customer Onboarded"
@@ -135,6 +140,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.backgroundIvory,
     flex: 1,
+    paddingTop:50
   },
   cardContainer: {
     flexDirection: 'row',
@@ -144,5 +150,16 @@ const styles = StyleSheet.create({
     gap: CARD_MARGIN,
     marginTop: 10,
     marginBottom:80,
+  },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+  },
+  headerText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginLeft: 10,
   },
 });

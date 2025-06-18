@@ -36,37 +36,12 @@ import {
 import {RootStackParamList} from '../../types/navigation';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import Offline from '../../../components/Offline';
+import { registerSchema } from '../../../utils/validationSchema';
 
 type RegistercreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   'Register'
 >;
-const schema = yup.object({
-  name: yup.string().required('Name is required'),
-  email: yup.string().email('Invalid email').required('Email is required'),
-  password: yup
-    .string()
-    .min(6, 'Password must be at least 6 characters')
-    .required('Password is required'),
-  confirmPassword: yup
-    .string()
-    .oneOf([yup.ref('password')], 'Passwords must match')
-    .required('Confirm Password is required'),
-  store_name: yup.string().required('Store name is required'),
-  contact: yup.string().required('Contact is required'),
-  email_store: yup
-    .string()
-    .email('Invalid email')
-    .required('Store email is required'),
-  store_url: yup
-    .string()
-    .url('Store URL is Must be Valid')
-    .required('Store URL is required'),
-  country: yup.string().required('Country is required'),
-  state: yup.string().required('State is required'),
-  city: yup.string().required('City is required'),
-  address: yup.string().required('Address is required'),
-});
 
 export default function RegisterScreen() {
   const navigation = useNavigation<RegistercreenNavigationProp>();
@@ -83,7 +58,7 @@ export default function RegisterScreen() {
     reset,
     formState: {errors},
   } = useForm({
-    resolver: yupResolver(schema),
+    resolver: yupResolver(registerSchema),
     defaultValues: {
       name: '',
       email: '',

@@ -26,19 +26,11 @@ import {Lock, Mail} from 'lucide-react-native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../types/navigation';
 import Offline from '../../../components/Offline';
+import { loginSchema } from '../../../utils/validationSchema';
 type LoginScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   'Login'
 >;
-
-const schema = yup.object().shape({
-  email: yup
-    .string()
-    .trim()
-    .email('Invalid email')
-    .required('Email is required'),
-  password: yup.string().min(6).trim().required('Password is required'),
-});
 
 export default function LoginScreen() {
   const navigation = useNavigation<LoginScreenNavigationProp>();
@@ -54,7 +46,7 @@ export default function LoginScreen() {
     setError,
     formState: {errors},
   } = useForm({
-    resolver: yupResolver(schema),
+    resolver: yupResolver(loginSchema),
     defaultValues: {
       email: '',
       password: '',

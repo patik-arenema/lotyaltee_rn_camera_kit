@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import ColorPicker from 'react-native-wheel-color-picker';
 import { colors } from '../../utils/colors';
 
@@ -15,7 +16,6 @@ const ColorPickerWrapper: React.FC<Props> = ({
   const [color, setColor] = useState(defaultColor);
   const [showPicker, setShowPicker] = useState(false);
 
-  // 🔁 Update internal color state when defaultColor changes
   useEffect(() => {
     setColor(defaultColor);
   }, [defaultColor]);
@@ -29,12 +29,18 @@ const ColorPickerWrapper: React.FC<Props> = ({
 
   return (
     <View style={styles.wrapper}>
-      <TouchableOpacity
-        onPress={togglePicker}
-        style={[styles.toggleButton, { backgroundColor: color }]}>
-        <Text style={styles.buttonText}>
-          {showPicker ? 'Close' : 'Select Color'}
-        </Text>
+      <TouchableOpacity onPress={togglePicker} style={styles.buttonWrapper}>
+        <LinearGradient
+    colors={[colors.backgroundIvory, colors.backgroundIvory, color, color]}
+          locations={[0, 0.5, 0.5, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.gradientButton}
+        >
+          <Text style={styles.buttonText}>
+            {showPicker ? 'Close' : 'Select Color'}
+          </Text>
+        </LinearGradient>
       </TouchableOpacity>
 
       {showPicker && (
@@ -59,18 +65,21 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 20,
   },
-  toggleButton: {
+  buttonWrapper: {
+    marginBottom: 10,
+    borderRadius: 8,
+    overflow: 'hidden', 
+  },
+  gradientButton: {
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 10,
+    borderColor:colors.black
   },
   buttonText: {
-    color: '#fff',
+    color: '#000',
     fontWeight: 'bold',
-    backgroundColor: colors.black,
-    padding: 4,
+    paddingBottom:20
   },
   pickerContainer: {
     height: 250,

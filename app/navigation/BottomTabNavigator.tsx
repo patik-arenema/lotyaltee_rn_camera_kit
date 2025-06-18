@@ -16,7 +16,8 @@ export default function BottomTabNavigator() {
         tabBarActiveTintColor: colors.button,
         tabBarInactiveTintColor: colors.darkGray,
         tabBarStyle: styles.tabBar,
-        tabBarShowLabel: false
+        tabBarShowLabel: false,
+        headerShown:false
       }}>
       <Tab.Screen
         name="Home"

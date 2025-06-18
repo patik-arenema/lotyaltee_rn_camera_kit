@@ -124,70 +124,78 @@ const UserPassHistory = () => {
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.tabContainer}>
-        {(['active', 'awaiting', 'expired'] as CardStatus[]).map(tab => (
-          <TouchableOpacity
-            key={tab}
-            onPress={() => handleTabSwitch(tab)}
+    <View style={styles.tabContainer}>
+      {(["active", "awaiting", "expired"] as CardStatus[]).map((tab) => (
+        <TouchableOpacity
+          key={tab}
+          onPress={() => handleTabSwitch(tab)}
+          style={[
+            styles.tabButton,
+            activeTab === tab && styles.activeTabButton,
+          ]}
+        >
+          <Text
             style={[
-              styles.tabButton,
-              activeTab === tab && styles.activeTabButton,
-            ]}>
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === tab && styles.activeTabText,
-              ]}>
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </Text>
+              styles.tabText,
+              activeTab === tab && styles.activeTabText,
+            ]}
+          >
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+
+    {sectionLoading ? (
+      <View style={styles.centered}>
+        <Loader />
+      </View>
+    ) : displayedCards.length === 0 ? (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>No cards in this section</Text>
+      </View>
+    ) : (
+      <View style={styles.cardList}>
+        {displayedCards.map((item, index) => (
+          <TouchableOpacity
+            activeOpacity={0.9}
+            key={item.card_uuid}
+            style={[
+              styles.cardItemFull,
+              item.status === "expired"
+                ? styles.redeemedCard
+                : item.status === "active"
+                ? styles.activeCard
+                : styles.awaitingCard,
+            ]}
+          >
+            <View style={styles.cardContent}>
+              <Text style={styles.cardTitle}>
+                {item.store_name || "Store Name"}
+              </Text>
+              <Text style={styles.cardSubtitle}>
+                {item.store_address || "Address not available"}
+              </Text>
+              <Text style={styles.cardDetail}>
+                <Text style={styles.cardLabel}>Stamps marked:</Text>{" "}
+                {item.no_of_stamps}
+              </Text>
+              <Text style={styles.cardDetail}>
+                <Text style={styles.cardLabel}>Last Marked:</Text>{" "}
+                {item.marked_date
+                  ? format(new Date(item.marked_date), "dd MMM yyyy")
+                  : "N/A"}
+              </Text>
+              <Text style={styles.cardDetail}>
+                <Text style={styles.cardLabel}>Created on:</Text>{" "}
+                {item.created_at?format(new Date(item.created_at), "dd MMM yyyy"):"N/A"}
+              </Text>
+            </View>
           </TouchableOpacity>
         ))}
       </View>
-
-      {sectionLoading ? (
-        <View style={styles.centered}>
-          <Loader />
-        </View>
-      ) : displayedCards.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No cards in this section</Text>
-        </View>
-      ) : (
-        <View>
-          {displayedCards.map(item => (
-            <View
-              key={item.card_uuid}
-              style={[
-                styles.card,
-                item.status === 'expired'
-                  ? styles.redeemedCard
-                  : item.status === 'active'
-                  ? styles.activeCard
-                  : styles.awaitingCard,
-              ]}>
-              <Text style={styles.storeName}>
-                {item.store_name || 'Store Name'}
-              </Text>
-              <Text style={styles.address}>
-                {item.store_address || 'Address not available'}
-              </Text>
-              <Text style={styles.date}>
-                Created: {format(new Date(item.created_at), 'dd-MMMM-yyyy')}
-              </Text>
-              <Text style={styles.date}>
-                Marked:{' '}
-                {item.marked_date
-                  ? format(new Date(item.marked_date), 'dd-MMMM-yyyy')
-                  : 'N/A'}
-              </Text>
-              <Text style={styles.status}>
-                Status: {item.status.toUpperCase()}
-              </Text>
-            </View>
-          ))}
-        </View>
-      )}
-    </ScrollView>
+    )}
+  </ScrollView>
   );
 };
 
@@ -195,12 +203,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
-    paddingTop: 50,
+    paddingTop: 70,
     backgroundColor: colors.backgroundIvory,
   },
   tabContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginVertical: 20,
     gap: 10,
   },
@@ -208,69 +216,150 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 20,
     borderRadius: 20,
-    backgroundColor: '#ccc',
+    backgroundColor: colors.lightGray,
   },
   activeTabButton: {
-    backgroundColor: '#000',
+    backgroundColor: colors.button,
   },
   tabText: {
-    color: '#000',
-    fontWeight: 'bold',
+    color: colors.black,
+    fontWeight: "600",
   },
   activeTabText: {
-    color: '#fff',
+    color: colors.white,
   },
   emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     flex: 1,
   },
   emptyText: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   card: {
     padding: 15,
     borderRadius: 10,
     marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
   },
+  cardList: {
+    flexDirection: "column",
+    gap: 12,
+    marginBottom: 30,
+  },
+
+  cardItemFull: {
+    width: "100%",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 10,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+
+  cardContent: {
+    flexDirection: "column",
+    justifyContent: "space-between",
+  },
+
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#1F2937", // gray-900
+    marginBottom: 4,
+  },
+
+  cardSubtitle: {
+    fontSize: 14,
+    color: "#4B5563", // gray-600
+    marginBottom: 6,
+  },
+
+  cardDetail: {
+    fontSize: 13,
+    color: "#6B7280", // gray-500
+    marginBottom: 2,
+  },
+
+  cardLabel: {
+    fontWeight: "600",
+    color: "#374151", // gray-700
+  },
+
+  cardStatus: {
+    marginTop: 10,
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#2563EB", // blue-600
+  },
+
   activeCard: {
-    backgroundColor: '#4CAF50',
+    borderLeftWidth: 5,
+    borderLeftColor: "#4CAF50",
   },
+
   redeemedCard: {
-    backgroundColor: '#727171',
+    borderLeftWidth: 5,
+    borderLeftColor: "#6B7280",
   },
+
   awaitingCard: {
-    backgroundColor: '#927b04',
+    borderLeftWidth: 5,
+    borderLeftColor: "#F59E0B",
   },
+
   storeName: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: "bold",
+    color: "#fff",
   },
   address: {
     fontSize: 14,
-    color: '#fff',
+    color: "#fff",
   },
   date: {
     fontSize: 14,
-    color: '#fff',
+    color: "#fff",
   },
   status: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: "bold",
+    color: "#fff",
   },
   centered: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cardGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 10,
+    marginBottom: 30,
+  },
+
+  cardItem: {
+    width: (width - 40) / 2, // Two cards per row with margins
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 10,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
 });
 

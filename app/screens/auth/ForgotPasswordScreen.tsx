@@ -99,13 +99,29 @@ const ForgotPasswordScreen = () => {
   const onSubmitEmail = async (data: any) => {
     clearErrors();
     setErrorMessage('');
+  
+    const email = data.email?.trim();
+  
+    // Inline validation (same as your Yup schema)
+    const isValidEmail =
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email || "") &&
+      !!email;
+  
+    if (!isValidEmail) {
+      setError('email', {
+        type: 'manual',
+        message: 'Enter a valid email',
+      });
+      return;
+    }
+  
     setLoading(true);
     try {
-      const response = await sendForgotPasswordOtp({email: data.email});
+      const response = await sendForgotPasswordOtp({ email });
       if (response.status === 200) {
-        setEmailValue(data.email);
+        setEmailValue(email);
         setStep('otp');
-        startResendTimer(); // start countdown
+        startResendTimer();
       } else {
         setError('email', {
           type: 'manual',
@@ -121,6 +137,7 @@ const ForgotPasswordScreen = () => {
       setLoading(false);
     }
   };
+  
 
   const onSubmitOtp = async () => {
     clearErrors();
@@ -151,18 +168,47 @@ const ForgotPasswordScreen = () => {
   const onSubmitNewPassword = async (data: any) => {
     clearErrors();
     setErrorMessage('');
+  
+    const password = data.new_password;
+  
+    // Inline validation (mirroring Yup schema)
+    if (!password) {
+      setError('new_password', {
+        type: 'manual',
+        message: 'Password is required',
+      });
+      return;
+    }
+  
+    if (password.length < 6) {
+      setError('new_password', {
+        type: 'manual',
+        message: 'Password must be at least 6 characters',
+      });
+      return;
+    }
+  
+    if (/\s/.test(password)) {
+      setError('new_password', {
+        type: 'manual',
+        message: 'Password cannot contain spaces',
+      });
+      return;
+    }
+  
     setLoading(true);
     try {
       const response = await resetUserPassword({
         email: emailValue,
-        new_password: data.new_password,
+        new_password: password,
       });
+  
       if (response.status === 200) {
         Alert.alert('Success', 'Password reset successful. Please log in.');
         navigation.dispatch(
           CommonActions.reset({
             index: 0,
-            routes: [{name: 'Login'}],
+            routes: [{ name: 'Login' }],
           }),
         );
       } else {
@@ -180,6 +226,7 @@ const ForgotPasswordScreen = () => {
       setLoading(false);
     }
   };
+  
 
   const handleChangeEmail = () => {
     reset();
