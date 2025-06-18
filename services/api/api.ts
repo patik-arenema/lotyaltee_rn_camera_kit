@@ -116,3 +116,7 @@ export const updateStoreSettings = async (formData: FormData) => {
     };
   }
 };
+
+export const updateStripImage = async () =>{
+  let storeId = await AsyncStorage.getItem("storeId")
+return handleRequest(() => http.post(`/store-admin/refresh-strips/${storeId}`))};

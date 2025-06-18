@@ -27,7 +27,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '../../../utils/colors';
 import { fonts } from '../../../utils/fonts';
 import { StampsDetailsType, StoreDetailsType } from '../../types/passDetails';
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../../types/navigation';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Offline from '../../../components/Offline';
@@ -55,7 +55,7 @@ const PassdetailsScreen = () => {
   const [redeemCount, setRedeemCount] = useState(0)
   const [redeemDialogBox, setRedeemDialogBox] = useState(false)
   const [redeemPass, setRedeemPass] = useState(false)
-
+  const isFocused = useIsFocused();
   const getUserPassDetails = async (passId: string) => {
     try {
       setLoading(true);
@@ -66,6 +66,10 @@ const PassdetailsScreen = () => {
         setPassDetails(userPassResponse.data);
         setScannedQR(true);
         setLoading(false);
+      } else {
+        setScannedQR(true);
+        setLoading(false);
+        Alert.alert(userPassResponse.message)
       }
     } catch (error) {
       console.log(error);
@@ -153,23 +157,23 @@ const PassdetailsScreen = () => {
     setUnsubscribe(() => newUnsubscribe);
   };
 
-  const submitRedeem=async ()=>{
-    const apiData ={
+  const submitRedeem = async () => {
+    const apiData = {
       "store_id": passDetails?.store_id,
-  "user_id": passDetails?.user_id,
-  "redeem_count": redeemCount
+      "user_id": passDetails?.user_id,
+      "redeem_count": redeemCount
     }
     try {
       const redeemResponse = await redeemStampCard(apiData)
-      if (redeemResponse.status==200) {
+      if (redeemResponse.status == 200) {
         Alert.alert('Success', 'Card(s) redeemed successfully');
-        getUserPassDetails(cardId); 
+        getUserPassDetails(cardId);
         setRedeemDialogBox(false)
       }
       Alert.alert(redeemResponse.message)
     } catch (error) {
       console.log(error);
-      
+
     }
   }
   const totalCount = () => {
@@ -178,7 +182,7 @@ const PassdetailsScreen = () => {
 
   }
   console.log(redeemPass);
-  
+
   useEffect(() => {
     const unsubscribeNetInfo = NetInfo.addEventListener(state => {
       setIsConnected(!!state.isConnected);
@@ -198,6 +202,12 @@ const PassdetailsScreen = () => {
     totalCount()
   }, [purchaseCount])
 
+  useEffect(() => {
+    if (!isFocused) {
+      setShowCamera(true);
+      setPassDetails(undefined);
+    }
+  }, [isFocused]);
 
   if (loading) {
     return (
@@ -209,47 +219,47 @@ const PassdetailsScreen = () => {
   if (!isConnected) return <Offline retryAction={handleRetry} />;
   return (
     <ScrollView style={styles.container}>
-       <Modal
-      visible={redeemDialogBox}
-      transparent
-      animationType="slide"
-      onRequestClose={() => setRedeemDialogBox(false)}
-    >
-      <Pressable
-        style={styles.modalOverlay}
-        onPress={() => setRedeemDialogBox(false)}
-      />
-      <View style={styles.dialogBox}>
-        <Text style={styles.title}>Redeem Count</Text>
+      <Modal
+        visible={redeemDialogBox}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setRedeemDialogBox(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setRedeemDialogBox(false)}
+        />
+        <View style={styles.dialogBox}>
+          <Text style={styles.title}>Redeem Count</Text>
 
-        <View style={styles.buttonCard}>
+          <View style={styles.buttonCard}>
+            <TouchableOpacity
+              style={styles.qtyButton}
+              onPress={() => setRedeemCount(prev => Math.max(0, prev - 1))}
+            >
+              <Text style={styles.qtyText}>-</Text>
+            </TouchableOpacity>
+            <Text style={styles.qtyValue}>{redeemCount}</Text>
+            <TouchableOpacity
+              style={styles.qtyButton}
+              onPress={() => {
+                if (redeemCount <= Number(passDetails?.pending_redeem)) {
+                  setRedeemCount(prev => prev + 1);
+                }
+              }}
+            >
+              <Text style={styles.qtyText}>+</Text>
+            </TouchableOpacity>
+          </View>
+
           <TouchableOpacity
-            style={styles.qtyButton}
-            onPress={() => setRedeemCount(prev => Math.max(0, prev - 1))}
+            style={[styles.submitBtn, { marginTop: 20 }]}
+            onPress={() => submitRedeem()}
           >
-            <Text style={styles.qtyText}>-</Text>
-          </TouchableOpacity>
-          <Text style={styles.qtyValue}>{redeemCount}</Text>
-          <TouchableOpacity
-            style={styles.qtyButton}
-            onPress={() => {
-              if (redeemCount <= Number(passDetails?.pending_redeem)) {
-                setRedeemCount(prev => prev + 1);
-              }
-            }}
-          >
-            <Text style={styles.qtyText}>+</Text>
+            <Text style={styles.submitBtnText}>Submit</Text>
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          style={[styles.submitBtn, { marginTop: 20 }]}
-          onPress={() => submitRedeem()}
-        >
-          <Text style={styles.submitBtnText}>Submit</Text>
-        </TouchableOpacity>
-      </View>
-    </Modal>
+      </Modal>
       <View>
         <View style={styles.sectionContainer}>
           <TouchableOpacity
@@ -362,7 +372,7 @@ const PassdetailsScreen = () => {
               </TouchableOpacity>
             </View>
             {totalCount() ?
-              <View style={{ flexDirection: 'column', alignItems: 'center', marginTop: 10,gap:10 }}>
+              <View style={{ flexDirection: 'column', alignItems: 'center', marginTop: 10, gap: 10 }}>
                 <Text style={{ marginLeft: 10 }}>User has earned a free coffee </Text>
                 <Text style={{ marginLeft: 10 }}>Redeem This Stamp Card </Text>
                 <Switch
@@ -559,7 +569,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 24,
     fontWeight: 'bold',
-    
+
   },
   submitBtn: {
     backgroundColor: colors.button,
@@ -677,7 +687,7 @@ const styles = StyleSheet.create({
   },
   qtyValue: {
     fontSize: 18,
-    paddingHorizontal:20,
+    paddingHorizontal: 20,
     fontWeight: '600',
   },
 });

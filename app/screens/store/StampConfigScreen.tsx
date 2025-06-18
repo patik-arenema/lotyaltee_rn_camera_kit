@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getStoreById, updateStoreSettings } from '../../../services/api/api';
+import { getStoreById, updateStoreSettings, updateStripImage } from '../../../services/api/api';
 import ColorPickerWrapper from '../../../components/formComponents/ColorPickerWrapper';
 import StampCardPreview from '../../../components/StampCardPreview';
 import { fonts } from '../../../utils/fonts';
@@ -41,15 +41,15 @@ const StampConfigScreen = () => {
   const [loading, setLoading] = useState(false);
 
   const shapeOptions = [
-    {label: 'Circle', value: 'circle'},
-    {label: 'Square', value: 'square'},
+    { label: 'Circle', value: 'circle' },
+    { label: 'Square', value: 'square' },
   ];
 
   const handleChange = <K extends keyof StampConfigType>(
     key: K,
     value: StampConfigType[K],
   ) => {
-    setConfig(prev => ({...prev, [key]: value}));
+    setConfig(prev => ({ ...prev, [key]: value }));
   };
 
   const handleSubmit = async () => {
@@ -66,20 +66,30 @@ const StampConfigScreen = () => {
       formData.append('stamp_text_color', config.stamp_text_color);
 
       const apiResponse = await updateStoreSettings(formData);
+console.log("this is store update",apiResponse);
 
       if (apiResponse.status === 200) {
-        const rawData = await AsyncStorage.getItem('storeData');
-        if (rawData) {
-          const parsed = JSON.parse(rawData);
-          const updated = {
-            ...parsed,
-            stamp_config: config,
-          };
-          Alert.alert('Stamp configuration updated successfully.');
-          await AsyncStorage.setItem('storeData', JSON.stringify(updated));
+        
+        const strpiImageRes = await updateStripImage()
+        console.log("strip response ",strpiImageRes);
+        
+        if (strpiImageRes.status == 200) {
+          const rawData = await AsyncStorage.getItem('storeData');
+          if (rawData) {
+            const parsed = JSON.parse(rawData);
+            const updated = {
+              ...parsed,
+              stamp_config: config,
+            };
+            Alert.alert(apiResponse.data?.message);
+            await AsyncStorage.setItem('storeData', JSON.stringify(updated));
+          }
+        } else {
+          Alert.alert(strpiImageRes.message)
         }
+
       } else {
-        Alert.alert('Something went wrong. Please try again.');
+        Alert.alert(apiResponse.message);
       }
     } catch (error) {
       console.error('Submission error:', error);
@@ -97,7 +107,7 @@ const StampConfigScreen = () => {
       const storeDataResponse = await getStoreById(storeId);
       if (storeDataResponse.status == 200) {
         setConfig(storeDataResponse.data?.stamp_config);
-        console.log("pass dot",storeDataResponse.data);
+        console.log("pass dot", storeDataResponse.data);
         AsyncStorage.setItem(
           'storeData',
           JSON.stringify(storeDataResponse.data),
@@ -112,7 +122,7 @@ const StampConfigScreen = () => {
   }, []);
 
   console.log(config);
-  
+
 
   return (
     <View>
@@ -127,8 +137,18 @@ const StampConfigScreen = () => {
           <TextInput
             style={styles.input}
             keyboardType="numeric"
-            value={String(config.no_of_stamps)}
-            onChangeText={text => handleChange('no_of_stamps', Number(text))}
+            value={config.no_of_stamps === 0 ? '' : String(config.no_of_stamps)}
+            onChangeText={(text) => {
+              if (text === '') {
+                handleChange('no_of_stamps', 0); // treat empty as 0 or undefined
+              } else {
+                const num = Number(text);
+                if (!isNaN(num) && num > 0 && num <= 15) {
+                  handleChange('no_of_stamps', num);
+                }
+              }
+            }}
+            maxLength={2}
           />
         </View>
 
@@ -174,7 +194,7 @@ const StampConfigScreen = () => {
                   style={[
                     styles.radioCircle,
                     config.stamp_shape === item.value &&
-                      styles.radioCircleSelected,
+                    styles.radioCircleSelected,
                   ]}
                 />
                 <Text style={styles.radioLabel}>{item.label}</Text>
@@ -185,13 +205,13 @@ const StampConfigScreen = () => {
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity
-            style={[styles.button, loading && {opacity: 0.6}]}
+            style={[styles.button, loading && { opacity: 0.6 }]}
             onPress={handleSubmit}
             disabled={loading}>
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={{color: '#fff'}}>Submit</Text>
+              <Text style={{ color: '#fff' }}>Submit</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -229,7 +249,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,

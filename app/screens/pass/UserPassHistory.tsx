@@ -104,13 +104,6 @@ const UserPassHistory = () => {
     }, 300);
   };
 
-  if (!isConnected) return <Offline retryAction={handleRetry} />;
-  if (loading)
-    return (
-      <View style={styles.centered}>
-        <Loader />
-      </View>
-    );
 
   const tabMap: Record<CardStatus, ImprovedStampCard[]> = {
     active: stampCards.active_cards,
@@ -119,6 +112,15 @@ const UserPassHistory = () => {
   };
 
   const displayedCards = tabMap[activeTab];
+
+  if (loading)
+    return (
+      <View style={styles.centered}>
+        <Loader />
+      </View>
+    );
+
+  if (!isConnected) return <Offline retryAction={handleRetry} />;
 
   return (
     <ScrollView style={styles.container}>

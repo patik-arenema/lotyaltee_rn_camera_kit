@@ -49,7 +49,6 @@ const HomeScreen = () => {
     };
   }, []);
 
-  if (!isConnected) return <Offline retryAction={handleRetry} />;
 
   const isFocus = useIsFocused();
 
@@ -89,6 +88,9 @@ const HomeScreen = () => {
       fetchData('customer', 'THIS_WEEK');
     }
   }, [isFocus]);
+  
+  if (!isConnected) return <Offline retryAction={handleRetry} />;
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.cardContainer}> 
