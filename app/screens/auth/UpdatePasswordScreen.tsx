@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -12,21 +12,28 @@ import {
 } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 
-import {useForm} from 'react-hook-form';
-import {yupResolver} from '@hookform/resolvers/yup';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import {changeCustumerPassword} from '../../../services/api/api';
+import { changeCustumerPassword } from '../../../services/api/api';
 import InputField from '../../../components/formComponents/InputField';
-import {colors} from '../../../utils/colors';
-import {fonts} from '../../../utils/fonts';
+import { colors } from '../../../utils/colors';
+import { fonts } from '../../../utils/fonts';
 import Offline from '../../../components/Offline';
 import { updatePasswordSchema } from '../../../utils/validationSchema';
-
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { BottomTabParamList } from '../../types/navigation';
+import { useNavigation } from '@react-navigation/native';
+import { ArrowLeft } from 'lucide-react-native';
+type ConfigNavigationProp = NativeStackNavigationProp<
+  BottomTabParamList,
+  'Settings'
+>;
 export default function UpdatePasswordScreen() {
   const {
     control,
     handleSubmit,
-    formState: {errors},
+    formState: { errors },
     reset,
   } = useForm({
     resolver: yupResolver(updatePasswordSchema),
@@ -36,6 +43,8 @@ export default function UpdatePasswordScreen() {
       confirm_password: '',
     },
   });
+  const navigation = useNavigation<ConfigNavigationProp>();
+
 
   const [loading, setLoading] = useState(false);
   const [secureEntryOld, setSecureEntryOld] = useState(true);
@@ -95,6 +104,13 @@ export default function UpdatePasswordScreen() {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.navigate('Settings')}
+      >
+        <ArrowLeft size={24} color={colors.primary} />
+        <Text style={styles.backButtonText}>Back</Text>
+      </TouchableOpacity>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.title}>Update Password</Text>
 
@@ -145,6 +161,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.backgroundIvory,
     padding: 20,
+    paddingTop: 50
   },
   scroll: {
     flexGrow: 1,
@@ -166,5 +183,16 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontFamily: fonts.medium,
     textAlign: 'center',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  backButtonText: {
+    color: colors.primary,
+    fontFamily: fonts.medium,
+    fontSize: 16,
+    marginLeft: 8,
   },
 });

@@ -17,6 +17,10 @@ import StampCardPreview from '../../../components/StampCardPreview';
 import { fonts } from '../../../utils/fonts';
 import { colors } from '../../../utils/colors';
 import Offline from '../../../components/Offline';
+import { ArrowLeft } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { BottomTabParamList } from '../../types/navigation';
 
 
 type StampConfigType = {
@@ -36,8 +40,13 @@ const defaultValues: StampConfigType = {
   stamp_fill_color: '#e2e2df',
   stamp_text_color: '#000000',
 };
-
+type ConfigNavigationProp = NativeStackNavigationProp<
+  BottomTabParamList,
+  'Settings'
+>;
 const StampConfigScreen = () => {
+  const navigation = useNavigation<ConfigNavigationProp>();
+
   const [config, setConfig] = useState<StampConfigType>(defaultValues);
   const [loading, setLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(true);
@@ -57,7 +66,7 @@ const StampConfigScreen = () => {
 
   const handleSubmit = async () => {
     if (!config) return;
-    if (config.no_of_stamps<=0) {
+    if (config.no_of_stamps <= 0) {
       Alert.alert("Stamps cannot be 0")
       return
     }
@@ -72,16 +81,16 @@ const StampConfigScreen = () => {
       formData.append('stamp_shape', config.stamp_shape);
       formData.append('stamp_fill_color', config.stamp_fill_color);
       formData.append('stamp_text_color', config.stamp_text_color);
-      
+
 
       const apiResponse = await updateStoreSettings(formData);
-console.log("this is store update",apiResponse);
+      console.log("this is store update", apiResponse);
 
       if (apiResponse.status === 200) {
-        
+
         const strpiImageRes = await updateStripImage()
-        console.log("strip response ",strpiImageRes);
-        
+        console.log("strip response ", strpiImageRes);
+
         if (strpiImageRes.status == 200) {
           const rawData = await AsyncStorage.getItem('storeData');
           if (rawData) {
@@ -102,6 +111,7 @@ console.log("this is store update",apiResponse);
       }
     } catch (error) {
       console.error('Submission error:', error);
+      setLoading(false)
       Alert.alert('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
@@ -111,10 +121,12 @@ console.log("this is store update",apiResponse);
   const getStoreDetails = async () => {
     const storeId = (await AsyncStorage.getItem('storeId')) || '';
     console.log(storeId);
-
+    setLoading(true)
     try {
       const storeDataResponse = await getStoreById(storeId);
       if (storeDataResponse.status == 200) {
+        setLoading(false)
+
         setConfig(storeDataResponse.data?.stamp_config);
         console.log("pass dot", storeDataResponse.data);
         AsyncStorage.setItem(
@@ -124,6 +136,10 @@ console.log("this is store update",apiResponse);
       }
     } catch (error) {
       console.log(error);
+      setLoading(false)
+
+    } finally {
+      setLoading(false)
     }
   };
   const handleRetry = async () => {
@@ -153,7 +169,7 @@ console.log("this is store update",apiResponse);
   useEffect(() => {
     getStoreDetails()
   }, []);
-  
+
   console.log(config);
   if (!isConnected) return <Offline retryAction={handleRetry} />;
 
@@ -164,6 +180,13 @@ console.log("this is store update",apiResponse);
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"
         nestedScrollEnabled={true}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.navigate('Settings')}
+        >
+          <ArrowLeft size={24} color={colors.primary} />
+          <Text style={styles.backButtonText}>Back</Text>
+        </TouchableOpacity>
         <Text style={styles.title}>Store Details</Text>
 
         <View style={styles.fieldContainer}>
@@ -177,7 +200,7 @@ console.log("this is store update",apiResponse);
                 handleChange('no_of_stamps', 0); // treat empty as 0 or undefined
               } else {
                 const num = Number(text);
-                if (!isNaN(num) && num > 0 && num <= 15) {
+                if (!isNaN(num) && num > 0 && num <= 10) {
                   handleChange('no_of_stamps', num);
                 }
               }
@@ -260,10 +283,21 @@ console.log("this is store update",apiResponse);
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    paddingTop:50,
+    paddingTop: 50,
     backgroundColor: colors.backgroundIvory,
     marginBottom: 50,
 
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  backButtonText: {
+    color: colors.primary,
+    fontFamily: fonts.medium,
+    fontSize: 16,
+    marginLeft: 8,
   },
   label: {
     fontSize: 16,

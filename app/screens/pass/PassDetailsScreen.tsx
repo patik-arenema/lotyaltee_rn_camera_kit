@@ -124,9 +124,14 @@ const PassdetailsScreen = () => {
         console.log(response);
 
         Alert.alert('Success', 'Purchase submitted successfully');
-        getUserPassDetails(cardId); // Refresh stamp view
+        setPassDetails(undefined)
+        setPurchaseCount(0)
+        setRedeemCount(0)
+        setScannedQR(true)
+        setRedeemPass(false)
+        // getUserPassDetails(cardId); // Refresh stamp view
       } else {
-        Alert.alert('Error', 'Failed to submit purchase');
+        Alert.alert(response.message || "Failed to update stamp");
       }
     } catch (err) {
       console.log(err);
@@ -163,17 +168,23 @@ const PassdetailsScreen = () => {
       "user_id": passDetails?.user_id,
       "redeem_count": redeemCount
     }
+    setLoading(true)
     try {
       const redeemResponse = await redeemStampCard(apiData)
       if (redeemResponse.status == 200) {
         Alert.alert('Success', 'Card(s) redeemed successfully');
-        getUserPassDetails(cardId);
+        setPassDetails(undefined)
+        setPurchaseCount(0)
+        setRedeemCount(0)
+        setScannedQR(true)
         setRedeemDialogBox(false)
+        setLoading(false)
+        getUserPassDetails(cardId);
       }
-      Alert.alert(redeemResponse.message)
     } catch (error) {
       console.log(error);
-
+    } finally {
+      setLoading(false)
     }
   }
   const totalCount = () => {
@@ -205,7 +216,9 @@ const PassdetailsScreen = () => {
   useEffect(() => {
     if (!isFocused) {
       setShowCamera(true);
-      setPassDetails(undefined);
+      setPassDetails(undefined)
+      setPurchaseCount(0)
+      setRedeemCount(0)
     }
   }, [isFocused]);
 
@@ -230,6 +243,8 @@ const PassdetailsScreen = () => {
           onPress={() => setRedeemDialogBox(false)}
         />
         <View style={styles.dialogBox}>
+          <Text style={[styles.title, { fontWeight: "800" }]}>User has {passDetails?.pending_redeem} pass to redeem</Text>
+
           <Text style={styles.title}>Redeem Count</Text>
 
           <View style={styles.buttonCard}>
@@ -243,7 +258,7 @@ const PassdetailsScreen = () => {
             <TouchableOpacity
               style={styles.qtyButton}
               onPress={() => {
-                if (redeemCount <= Number(passDetails?.pending_redeem)) {
+                if (redeemCount < Number(passDetails?.pending_redeem)) {
                   setRedeemCount(prev => prev + 1);
                 }
               }}
@@ -292,7 +307,7 @@ const PassdetailsScreen = () => {
                   <TouchableOpacity key={index}>
                     {index < (passDetails?.stamps_count ?? 0) ? (
                       <Image
-                        source={require('../../../assets/images/bean.png')}
+                        source={require('../../../assets/images/cup.png')}
                         style={[styles.circle]}
                       />
                     ) : index ===
@@ -337,7 +352,7 @@ const PassdetailsScreen = () => {
             </View>
           </View>
         ) : null}
-        {scannedQR && passDetails ? (
+        {!showCamera && passDetails ? (
           <View style={styles.purchaseContainer}>
             <Text
               style={{
@@ -376,10 +391,11 @@ const PassdetailsScreen = () => {
                 <Text style={{ marginLeft: 10 }}>User has earned a free coffee </Text>
                 <Text style={{ marginLeft: 10 }}>Redeem This Stamp Card </Text>
                 <Switch
+                  style={{ marginVertical: 10 }}
                   value={redeemPass}
                   onValueChange={setRedeemPass}
-                  thumbColor={redeemPass ? '#34C759' : '#ccc'}
-                  trackColor={{ false: '#fff', true: '#81b0ff' }}
+                  thumbColor={redeemPass ? colors.button : colors.secondary}
+                  trackColor={{ false: '#fff', true: colors.lightGray }}
                 />
               </View> : null
             }
@@ -391,7 +407,7 @@ const PassdetailsScreen = () => {
 
           </View>
         ) : null}
-        {scannedQR && passDetails ? (
+        {!showCamera && passDetails ? (
           <View style={styles.purchaseContainer}>
             <View style={styles.buttonContainer}>
               <TouchableOpacity
@@ -451,7 +467,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 25,
-    paddingTop:50,
+    paddingTop: 50,
     backgroundColor: colors.backgroundIvory,
   },
   scanner: {
@@ -513,12 +529,13 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'flex-start',
     paddingVertical: 10,
-    gap: 15, // Add spacing between circles
+    gap: 15,
   },
   circle: {
     width: circleSize,
     height: circleSize,
-    borderRadius: circleSize / 2, // Ensures the circle shape
+    padding: 15,
+    borderRadius: circleSize / 2,
     backgroundColor: 'rgba(163, 244, 255, 0.374)',
     justifyContent: 'center',
     alignItems: 'center',

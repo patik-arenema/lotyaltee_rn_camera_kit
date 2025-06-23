@@ -1,4 +1,4 @@
-import {NavigatorScreenParams} from '@react-navigation/native';
+import { NavigatorScreenParams } from '@react-navigation/native';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -8,7 +8,8 @@ export type RootStackParamList = {
   Main: NavigatorScreenParams<BottomTabParamList>;
   'Store Configuration': undefined;
   'Change Password': undefined;
-  UserHistory:undefined
+  UserHistory: undefined
+  "Scan Pass": undefined
 };
 
 export type BottomTabParamList = {

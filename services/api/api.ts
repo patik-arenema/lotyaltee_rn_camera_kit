@@ -2,51 +2,51 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { handleRequest } from "../middleware/handleRequest";
 import http from "../middleware/http";
 
-export const userLogin = (data:any) =>
+export const userLogin = (data: any) =>
   handleRequest(() => http.post("/auth/login", data));
 
-export const userRegister = (data:any) =>
+export const userRegister = (data: any) =>
   handleRequest(() => http.post("/auth/register/store-admin", data));
 
-export const sendRegisterCustumerOtp = (data:any) =>
+export const sendRegisterCustumerOtp = (data: any) =>
   handleRequest(() => http.post("/auth/send-registration-otp", data));
 
-export const verifyRegisterCustumerOtp = (data:any) =>
+export const verifyRegisterCustumerOtp = (data: any) =>
   handleRequest(() => http.post("/auth/verify-registration-otp", data));
 
-export const sendForgotPasswordOtp = (data:any) =>
+export const sendForgotPasswordOtp = (data: any) =>
   handleRequest(() => http.post("/auth/send-forgot-otp", data));
 
-export const verifyForgotPasswordOtp = (data:any) =>
+export const verifyForgotPasswordOtp = (data: any) =>
   handleRequest(() => http.post("/auth/verify-forgot-otp", data));
 
-export const resetUserPassword = (data:any) =>
+export const resetUserPassword = (data: any) =>
   handleRequest(() => http.post("/auth/reset-password", data));
 
-export const changeCustumerPassword = (data:any) =>
+export const changeCustumerPassword = (data: any) =>
   handleRequest(() => http.post("/auth/change-password", data));
 
-export const getStampMark = (data:any) =>
+export const getStampMark = (data: any) =>
   handleRequest(() => http.post("/stamps/mark", data));
 
 export const getUserStoreList = () =>
   handleRequest(() => http.get("/stores/list"));
 
-export const getStoreById = (id:string) =>
+export const getStoreById = (id: string) =>
   handleRequest(() => http.get(`/stores/${id}`));
 
-export const getStoreDetails = (data:any) =>
+export const getStoreDetails = (data: any) =>
   handleRequest(() => http.post(`/stores/select-store`, data));
 
-export const getStampCardDetails = (userId:string, storeId:string) =>
+export const getStampCardDetails = (userId: string, storeId: string) =>
   handleRequest(() =>
     http.get(`/card/info?user_id=${userId}&store_id=${storeId}`)
   );
 
-export const generateStampMarks = (data:any) =>
+export const generateStampMarks = (data: any) =>
   handleRequest(() => http.post(`/stamps/mark`, data));
 
-export const downloadStampCard = (card_uuid:string) =>
+export const downloadStampCard = (card_uuid: string) =>
   handleRequest(() => http.post(`/card/download?card_uuid=${card_uuid}`));
 
 export const getUserStampsHistory = async () => {
@@ -54,42 +54,57 @@ export const getUserStampsHistory = async () => {
   return handleRequest(() => http.post(`/stamps/history?user_id=${userId}`));
 };
 
-export const getUserCardsHistory = (data:any) => {
-  return handleRequest(()=>http.post(`/store-admin/cards/user`,data))
+export const getUserCardsHistory = (data: any) => {
+  return handleRequest(() => http.post(`/store-admin/cards/user`, data))
 }
 
-export const updateStampCard = (data:any) =>
+export const updateStampCard = (data: any) =>
   handleRequest(() => http.post(`/store-admin/update-stamp`, data));
 
-export const getCardDetailsById = (id:string) =>
+export const getCardDetailsById = (id: string) =>
   handleRequest(() => http.get(`/card/user-details?card_uuid=${id}`));
 
-export const redeemStampCard = (data:any) =>
+export const redeemStampCard = (data: any) =>
   handleRequest(() => http.post(`/card/redeem`, data));
 
-export const updateStampMarks = (data:any) =>
+export const updateStampMarks = (data: any) =>
   handleRequest(() => http.post(`/stamps/mark`, data));
 
-export const customerOnboardedData = async (data: any) =>{
-    let storeId = await AsyncStorage.getItem("storeId")
-  return handleRequest(() => http.post(`/store-admin/customer-onboarded/count?store_id=${storeId}`, data))};
+export const customerOnboardedData = async (data: any) => {
+  let storeId = await AsyncStorage.getItem("storeId")
+  return handleRequest(() => http.post(`/store-admin/analytics/customer-onboarded/count?store_id=${storeId}`, data))
+};
 
 export const coffeeRedeemedData = async (data: any) => {
-    let storeId = await AsyncStorage.getItem("storeId")
-  return handleRequest(() => http.post(`/store-admin/coffee-redeemed/count?store_id=${storeId}`, data))};
+  let storeId = await AsyncStorage.getItem("storeId")
+  return handleRequest(() => http.post(`/store-admin/analytics/coffee-redeemed/count?store_id=${storeId}`, data))
+};
 
 export const cardsGeneratedData = async (data: any) => {
   let storeId = await AsyncStorage.getItem("storeId")
-  return handleRequest(() => http.post(`/store-admin/card-generated/count?store_id=${storeId}`, data))};  
+  return handleRequest(() => http.post(`/store-admin/analytics/card-generated/count?store_id=${storeId}`, data))
+};
 
 export const stampsMarkedData = async (data: any) => {
   let storeId = await AsyncStorage.getItem("storeId")
-  return handleRequest(() => http.post(`/store-admin/stamp-marked/count?store_id=${storeId}`, data))};  
+  return handleRequest(() => http.post(`/store-admin/analytics/stamp-marked/count?store_id=${storeId}`, data))
+};
 
 export const customerVisitedData = async (data: any) => {
   let storeId = await AsyncStorage.getItem("storeId")
-  return handleRequest(() => http.post(`/store-admin/customer-visited/count?store_id=${storeId}`, data))};  
-  
+  return handleRequest(() => http.post(`/store-admin/analytics/customer-visited/count?store_id=${storeId}`, data))
+};
+
+export const customerRetentionData = async (data: any) => {
+  let storeId = await AsyncStorage.getItem("storeId")
+  return handleRequest(() => http.post(`/store-admin/analytics/customer-retention-rate/count?store_id=${storeId}`, data))
+};
+
+export const topCustomerData = async (data: any) => {
+  let storeId = await AsyncStorage.getItem("storeId")
+  return handleRequest(() => http.post(`/store-admin/analytics/top-customer?store_id=${storeId}&limit=10`, data))
+};
+
 export const updateStoreSettings = async (formData: FormData) => {
   try {
     const response = await http.put(
@@ -117,6 +132,22 @@ export const updateStoreSettings = async (formData: FormData) => {
   }
 };
 
-export const updateStripImage = async () =>{
+export const updateStripImage = async () => {
   let storeId = await AsyncStorage.getItem("storeId")
-return handleRequest(() => http.post(`/store-admin/refresh-strips/${storeId}`))};
+  return handleRequest(() => http.post(`/store-admin/refresh-strips/${storeId}`))
+};
+
+export const getCustomerStampReport = async (data: any) => {
+  let storeId = await AsyncStorage.getItem("storeId")
+  return handleRequest(() => http.post(`/store-admin/analytics/report/customers/cards-stamps?store_id=${storeId}`, data))
+}
+
+export const getDaywiseTrendReport = async (data: any) => {
+  console.log(data, "aopi rec deta");
+  let storeId = await AsyncStorage.getItem("storeId")
+  return handleRequest(() => http.post(`/store-admin/analytics/report/daywise/trend?store_id=${storeId}`, data))
+}
+export const getFreeCoffeeReport = async (data: any) => {
+  let storeId = await AsyncStorage.getItem("storeId")
+  return handleRequest(() => http.post(`/store-admin/analytics/report/coffee/free?store_id=${storeId}`, data))
+}

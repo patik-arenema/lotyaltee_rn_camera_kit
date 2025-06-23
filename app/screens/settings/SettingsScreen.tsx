@@ -1,9 +1,9 @@
 import React from 'react';
-import {View, StyleSheet, TouchableOpacity, Text} from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import { View, StyleSheet, TouchableOpacity, Text, ScrollView } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {Settings, Store, Lock, LogOut, Wallet} from 'lucide-react-native';
+import { Settings, Store, Lock, LogOut, Wallet, Power, FileSpreadsheet } from 'lucide-react-native';
 import { RootStackParamList } from '../../types/navigation';
 import { colors } from '../../../utils/colors';
 
@@ -17,32 +17,42 @@ export default function SettingsScreen() {
     await AsyncStorage.clear();
     navigation.reset({
       index: 0,
-      routes: [{name: 'Login'}],
+      routes: [{ name: 'Login' }],
     });
   };
 
   const menuItems = [
-    // {
-    //   title: 'Store Configuration',
-    //   icon: <Store size={24} color="#007AFF" />,
-    //   onPress: () => navigation.navigate('Store Configuration' as never),
-    // },
+    {
+      title: 'Store Configuration',
+      icon: <Store size={24} color={colors.button} />,
+      onPress: () => navigation.navigate('Store Configuration' as never),
+    },
     {
       title: 'Stamp Configuration',
-      icon: <Wallet size={24} color="#007AFF" />,
+      icon: <Wallet size={24} color={colors.button} />,
       onPress: () => navigation.navigate('Stamp Configuration' as never),
     },
     {
+      title: 'Reports',
+      icon: <FileSpreadsheet size={24} color={colors.button} />,
+      onPress: () => navigation.navigate('Reports' as never),
+    },
+    {
       title: 'Change Password',
-      icon: <Lock size={24} color="#007AFF" />,
+      icon: <Lock size={24} color={colors.button} />,
       onPress: () => navigation.navigate('Change Password' as never),
     },
   ];
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
+      {/* <View style={styles.footer}>
+        <Power size={28} color={colors.button} />
+        <Text style={styles.menuText}> Powered by</Text>
+        <Text style={styles.headerText}>  Arenema</Text>
+      </View> */}
       <View style={styles.header}>
-        <Settings size={32} color="#007AFF" />
+        <Settings size={32} color={colors.button} />
         <Text style={styles.headerText}>Settings</Text>
       </View>
 
@@ -62,17 +72,25 @@ export default function SettingsScreen() {
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </View>
-    </View>
+
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop:50,
+    paddingTop: 50,
     backgroundColor: colors.backgroundIvory,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  footer: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 20,

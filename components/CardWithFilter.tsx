@@ -20,11 +20,12 @@ type FilterType = 'TODAY' | 'THIS_WEEK' | 'THIS_MONTH' | 'THIS_YEAR';
 interface Props {
   title: string;
   value: number;
+  additionalText?: string
   onFilterChange: (filter: FilterType) => void;
   gradient: [string, string]
 }
 
-const CardWithFilterMenu = ({ title, value, onFilterChange, gradient }: Props) => {
+const CardWithFilterMenu = ({ title, additionalText, value, onFilterChange, gradient }: Props) => {
   const [menuVisible, setMenuVisible] = useState(false);
   const [selected, setSelected] = useState<FilterType>('THIS_WEEK');
 
@@ -76,6 +77,9 @@ const CardWithFilterMenu = ({ title, value, onFilterChange, gradient }: Props) =
         <View style={styles.contentContainer}>
           <Text style={styles.subtitle}>{selected.replace('_', ' ')}</Text>
           <Text style={styles.value}>{value.toLocaleString()}</Text>
+          {additionalText ?
+            <Text style={styles.subtitle}>{additionalText}</Text>
+            : null}
           <Text style={styles.title}>{title}</Text>
         </View>
       </View>
@@ -108,7 +112,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     marginTop: 8,
-    paddingVertical:10
+    paddingVertical: 10
   },
   menuButton: {
     position: 'absolute',

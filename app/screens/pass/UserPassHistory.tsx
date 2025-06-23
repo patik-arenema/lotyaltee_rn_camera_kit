@@ -1,7 +1,7 @@
 import NetInfo from '@react-native-community/netinfo';
-import {useIsFocused} from '@react-navigation/native';
-import {format} from 'date-fns';
-import React, {useEffect, useState} from 'react';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
+import { format } from 'date-fns';
+import React, { useEffect, useState } from 'react';
 import {
   Dimensions,
   FlatList,
@@ -11,13 +11,17 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {getUserCardsHistory} from '../../../services/api/api';
+import { getUserCardsHistory } from '../../../services/api/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Offline from '../../../components/Offline';
 import Loader from '../../../components/Loader';
-import {colors} from '../../../utils/colors';
+import { colors } from '../../../utils/colors';
+import { fonts } from '../../../utils/fonts';
+import { ArrowLeft } from 'lucide-react-native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { BottomTabParamList, RootStackParamList } from '../../types/navigation';
 
-const {width, height} = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 type CardStatus = 'active' | 'awaiting' | 'expired';
 
@@ -38,7 +42,14 @@ interface NewStampResponse {
   awaiting_cards: ImprovedStampCard[];
 }
 
+type ConfigNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'Scan Pass'
+>;
+
 const UserPassHistory = () => {
+  const navigation = useNavigation<ConfigNavigationProp>();
+
   const [loading, setLoading] = useState(false);
   const [sectionLoading, setSectionLoading] = useState(false);
   const [stampCards, setStampCards] = useState<NewStampResponse>({
@@ -124,78 +135,86 @@ const UserPassHistory = () => {
 
   return (
     <ScrollView style={styles.container}>
-    <View style={styles.tabContainer}>
-      {(["active", "awaiting", "expired"] as CardStatus[]).map((tab) => (
-        <TouchableOpacity
-          key={tab}
-          onPress={() => handleTabSwitch(tab)}
-          style={[
-            styles.tabButton,
-            activeTab === tab && styles.activeTabButton,
-          ]}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === tab && styles.activeTabText,
-            ]}
-          >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </View>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.navigate('Scan Pass')}
+      >
+        <ArrowLeft size={24} color={colors.primary} />
+        <Text style={styles.backButtonText}>Back</Text>
+      </TouchableOpacity>
 
-    {sectionLoading ? (
-      <View style={styles.centered}>
-        <Loader />
-      </View>
-    ) : displayedCards.length === 0 ? (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>No cards in this section</Text>
-      </View>
-    ) : (
-      <View style={styles.cardList}>
-        {displayedCards.map((item, index) => (
+      <View style={styles.tabContainer}>
+        {(["active", "awaiting", "expired"] as CardStatus[]).map((tab) => (
           <TouchableOpacity
-            activeOpacity={0.9}
-            key={item.card_uuid}
+            key={tab}
+            onPress={() => handleTabSwitch(tab)}
             style={[
-              styles.cardItemFull,
-              item.status === "expired"
-                ? styles.redeemedCard
-                : item.status === "active"
-                ? styles.activeCard
-                : styles.awaitingCard,
+              styles.tabButton,
+              activeTab === tab && styles.activeTabButton,
             ]}
           >
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>
-                {item.store_name || "Store Name"}
-              </Text>
-              <Text style={styles.cardSubtitle}>
-                {item.store_address || "Address not available"}
-              </Text>
-              <Text style={styles.cardDetail}>
-                <Text style={styles.cardLabel}>Stamps marked:</Text>{" "}
-                {item.no_of_stamps}
-              </Text>
-              <Text style={styles.cardDetail}>
-                <Text style={styles.cardLabel}>Last Marked:</Text>{" "}
-                {item.marked_date
-                  ? format(new Date(item.marked_date), "dd MMM yyyy")
-                  : "N/A"}
-              </Text>
-              <Text style={styles.cardDetail}>
-                <Text style={styles.cardLabel}>Created on:</Text>{" "}
-                {item.created_at?format(new Date(item.created_at), "dd MMM yyyy"):"N/A"}
-              </Text>
-            </View>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === tab && styles.activeTabText,
+              ]}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
-    )}
-  </ScrollView>
+
+      {sectionLoading ? (
+        <View style={styles.centered}>
+          <Loader />
+        </View>
+      ) : displayedCards.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No cards in this section</Text>
+        </View>
+      ) : (
+        <View style={styles.cardList}>
+          {displayedCards.map((item, index) => (
+            <TouchableOpacity
+              activeOpacity={0.9}
+              key={item.card_uuid}
+              style={[
+                styles.cardItemFull,
+                item.status === "expired"
+                  ? styles.redeemedCard
+                  : item.status === "active"
+                    ? styles.activeCard
+                    : styles.awaitingCard,
+              ]}
+            >
+              <View style={styles.cardContent}>
+                <Text style={styles.cardTitle}>
+                  {item.store_name || "Store Name"}
+                </Text>
+                <Text style={styles.cardSubtitle}>
+                  {item.store_address || "Address not available"}
+                </Text>
+                <Text style={styles.cardDetail}>
+                  <Text style={styles.cardLabel}>Stamps marked:</Text>{" "}
+                  {item.no_of_stamps}
+                </Text>
+                <Text style={styles.cardDetail}>
+                  <Text style={styles.cardLabel}>Last Marked:</Text>{" "}
+                  {item.marked_date
+                    ? format(new Date(item.marked_date), "dd MMM yyyy")
+                    : "N/A"}
+                </Text>
+                <Text style={styles.cardDetail}>
+                  <Text style={styles.cardLabel}>Created on:</Text>{" "}
+                  {item.created_at ? format(new Date(item.created_at), "dd MMM yyyy") : "N/A"}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+    </ScrollView>
   );
 };
 
@@ -360,6 +379,17 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  backButtonText: {
+    color: colors.primary,
+    fontFamily: fonts.medium,
+    fontSize: 16,
+    marginLeft: 8,
   },
 });
 
