@@ -122,14 +122,13 @@ const HomeScreen = () => {
 
   useEffect(() => {
     if (isFocus === true) {
-      console.log('first focus effect called');
-      fetchData('onboarded', 'THIS_WEEK');
-      fetchData('redeemed', 'THIS_WEEK');
-      fetchData('cards', 'THIS_WEEK');
-      fetchData('stamps', 'THIS_WEEK');
-      fetchData('customer', 'THIS_WEEK');
-      fetchData('retention', 'THIS_WEEK');
-      fetchData("top_customers", "THIS_WEEK")
+      fetchData('onboarded', 'THIS_MONTH');
+      fetchData('redeemed', 'THIS_MONTH');
+      fetchData('cards', 'THIS_MONTH');
+      fetchData('stamps', 'THIS_MONTH');
+      fetchData('customer', 'THIS_MONTH');
+      fetchData('retention', 'THIS_MONTH');
+      fetchData("top_customers", "THIS_MONTH")
     }
     storeItemSet()
   }, [isFocus]);

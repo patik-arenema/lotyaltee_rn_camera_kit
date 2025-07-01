@@ -10,6 +10,7 @@ export type RootStackParamList = {
   'Change Password': undefined;
   UserHistory: undefined
   "Scan Pass": undefined
+  OTPScreen: { email: string; type: string };
 };
 
 export type BottomTabParamList = {

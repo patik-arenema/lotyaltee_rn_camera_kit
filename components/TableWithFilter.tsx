@@ -14,14 +14,16 @@ import {
 import { colors } from '../utils/colors';
 import { fonts } from '../utils/fonts';
 import { exportToExcel } from './ExportToExcel';
+import { format } from 'date-fns';
 
 const CELL_WIDTH = Dimensions.get('window').width / 2.5
 type Props = {
     data: Array<Record<string, any>>;
     title: string
+    date: { start: Date, end: Date }
 };
 
-const TableWithFilter: React.FC<Props> = ({ data, title }) => {
+const TableWithFilter: React.FC<Props> = ({ data, title, date }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [pageSize, setPageSize] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
@@ -53,16 +55,17 @@ const TableWithFilter: React.FC<Props> = ({ data, title }) => {
 
     const startCount = totalData === 0 ? 0 : startIdx + 1;
     const endCount = Math.min(startIdx + pageSize, totalData);
-
+    let excelTitle = `${title} ${format(date?.start, "dd/MM/yyyy")}-${(format(date.end, "dd/MM/yyyy"))}`
     return (
         <View style={styles.container}>
             <Text style={styles.header}>{title}</Text>
-            <TouchableOpacity style={styles.exportButton} onPress={() => exportToExcel(data)}>
+            <TouchableOpacity style={styles.exportButton} onPress={() => exportToExcel(data, excelTitle)}>
                 <FileSpreadsheet size={20} color={colors.white} /> <Text style={styles.exportButtonText}>Download Excel</Text>
             </TouchableOpacity>
             <TextInput
                 placeholder="Search..."
                 style={styles.searchInput}
+                placeholderTextColor={colors.darkGray}
                 value={searchQuery}
                 onChangeText={text => {
                     setSearchQuery(text);
@@ -171,7 +174,7 @@ const styles = StyleSheet.create({
         shadowRadius: 12,
     },
     header: {
-        fontSize: 24,
+        fontSize: 22,
         fontWeight: "900",
         paddingVertical: 10,
         fontFamily: fonts.medium,

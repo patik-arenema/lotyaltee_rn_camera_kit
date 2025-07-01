@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import NetInfo from '@react-native-community/netinfo';
 
 import {
@@ -13,15 +13,15 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useForm} from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
-import {yupResolver} from '@hookform/resolvers/yup';
+import { yupResolver } from '@hookform/resolvers/yup';
 
-import {userRegister} from '../../../services/api/api';
+import { sendRegisterCustumerOtp, userRegister } from '../../../services/api/api';
 import InputField from '../../../components/formComponents/InputField';
-import {colors} from '../../../utils/colors';
-import {fonts} from '../../../utils/fonts';
-import {CommonActions, useNavigation} from '@react-navigation/native';
+import { colors } from '../../../utils/colors';
+import { fonts } from '../../../utils/fonts';
+import { CommonActions, useNavigation } from '@react-navigation/native';
 import {
   Contact,
   Globe,
@@ -33,8 +33,8 @@ import {
   Store,
   User,
 } from 'lucide-react-native';
-import {RootStackParamList} from '../../types/navigation';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../types/navigation';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Offline from '../../../components/Offline';
 import { registerSchema } from '../../../utils/validationSchema';
 
@@ -56,7 +56,7 @@ export default function RegisterScreen() {
     handleSubmit,
     setError,
     reset,
-    formState: {errors},
+    formState: { errors },
   } = useForm({
     resolver: yupResolver(registerSchema),
     defaultValues: {
@@ -80,7 +80,7 @@ export default function RegisterScreen() {
     navigation.dispatch(
       CommonActions.reset({
         index: 0,
-        routes: [{name: 'Login'}],
+        routes: [{ name: 'Login' }],
       }),
     );
   };
@@ -94,19 +94,27 @@ export default function RegisterScreen() {
       store_name: data.store_name,
       contact: data.contact,
       email_store: data.email_store,
-      store_url: data.store_url,
+      store_url: `https://${data.store_url}`,
       country: data.country,
       state: data.state,
       city: data.city,
       address: data.address,
     };
+    console.log(apiData);
+
+    let emailData = { "email": data.email }
+    console.log(emailData);
 
     try {
       const registerResponse = await userRegister(apiData);
       if (registerResponse.status === 200 || registerResponse.status === 201) {
-        Alert.alert(registerResponse?.data?.message);
         setLoading(false);
-        handleLogin();
+        let regOtp = await sendRegisterCustumerOtp(emailData)
+        console.log(regOtp);
+        navigation.navigate('OTPScreen', {
+          email: data.email,
+          type: 'reg',
+        });
       } else {
         setError('address', {
           type: 'manual',
@@ -266,7 +274,7 @@ export default function RegisterScreen() {
         <View style={styles.footer}>
           <Text>Already have an account? </Text>
           <TouchableOpacity onPress={handleLogin}>
-            <Text style={{color: colors.primary}}>Login</Text>
+            <Text style={{ color: colors.primary }}>Login</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -275,9 +283,9 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: colors.backgroundIvory, padding: 20},
-  scroll: {flexGrow: 1, justifyContent: 'center'},
-  logo: {width: 180, height: 180, alignSelf: 'center', marginBottom: 0},
+  container: { flex: 1, backgroundColor: colors.backgroundIvory, padding: 20 },
+  scroll: { flexGrow: 1, justifyContent: 'center' },
+  logo: { width: 180, height: 180, alignSelf: 'center', marginBottom: 0 },
   title: {
     fontSize: 24,
     fontFamily: fonts.bold,

@@ -36,7 +36,7 @@ const ReportsScreen = () => {
 
     const reportOptions = [
         { label: 'Customer Stamps', value: 'customer' },
-        { label: 'Week Coffee Redeemed Trend', value: 'redeemed' },
+        { label: 'Weekly Coffee Redeemed Trend', value: 'redeemed' },
         { label: 'Weekly Marked Stamps Trend', value: 'stamp' },
         { label: 'Free Coffee Redeemed', value: 'freeCoffee' },
     ];
@@ -60,13 +60,13 @@ const ReportsScreen = () => {
                 apiResponseData = await getDaywiseTrendReport(trendData);
                 setTableData(apiResponseData?.data || []);
 
-                setTitle('Daywise Coffee Trend');
+                setTitle('Weekly Coffee Redeemed Trend');
             } else if (reportType === 'stamp') {
                 let trendData = { ...apiData, type: 'stamps' }
                 apiResponseData = await getDaywiseTrendReport(trendData);
                 setTableData(apiResponseData?.data || []);
 
-                setTitle('Daywise Stamp Trend');
+                setTitle('Weekly Marked Stamps Trend');
             } else if (reportType === 'freeCoffee') {
                 apiResponseData = await getFreeCoffeeReport(apiData);
                 setTitle('Free Coffee Report');
@@ -138,7 +138,7 @@ const ReportsScreen = () => {
             </View>
 
             {tableData.length > 0 ? <View>
-                <TableWithFilter title={title} data={tableData} />
+                <TableWithFilter title={title} data={tableData} date={{ start: startDate, end: endDate }} />
             </View> : <View style={[styles.optionsContainer, { alignItems: "center" }]}>
                 <Text>No Data</Text></View>}
             <Modal visible={showStartPicker} transparent animationType="slide">

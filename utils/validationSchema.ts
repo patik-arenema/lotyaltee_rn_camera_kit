@@ -13,7 +13,10 @@ export const loginSchema = yup.object().shape({
     .string()
     .required("Password is required")
     .min(6)
-    .matches(/^\S*$/, "Password must not contain spaces"),
+    .matches(
+      /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/,
+      "Password must contain at least 1 uppercase letter, 1 number, and 1 special character"
+    ).matches(/^\S*$/, "Password must not contain spaces"),
 });
 
 export const registerSchema = yup.object({
@@ -31,23 +34,42 @@ export const registerSchema = yup.object({
     .required("Email is required"),
   password: yup
     .string()
-    .min(6, "Password must be at least 6 characters")
     .required("Password is required")
+    .min(6, "Password must be at least 6 characters")
+    .matches(
+      /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/,
+      "Password must contain at least 1 uppercase letter, 1 number, and 1 special character"
+    )
     .matches(/^\S*$/, "Password must not contain spaces"),
   confirmPassword: yup
     .string()
     .oneOf([yup.ref("password")], "Passwords must match")
-    .required("Confirm Password is required"),
-    store_name: yup.string().required('Store name is required'),
-  contact: yup.string().required('Contact is required'),
+    .required("Confirm Password is required")
+    .matches(
+      /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/,
+      "Password must contain at least 1 uppercase letter, 1 number, and 1 special character"
+    ),
+  store_name: yup.string().required('Store name is required'),
+  contact: yup
+    .string()
+    .matches(/^\d+$/, "Contact must contain only digits")
+    .max(16, "Contact must be at most 16 digits")
+    .required("Contact is required"),
   email_store: yup
     .string()
-    .email('Invalid email')
-    .required('Store email is required'),
+    .trim()
+    .test("valid-email-format", "Enter a valid email", (value) =>
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value || "")
+    )
+    .email("Invalid email")
+    .required("Email is required"),
   store_url: yup
     .string()
-    .url('Store URL is Must be Valid')
-    .required('Store URL is required'),
+    .matches(
+      /^(?!https?:\/\/)([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/,
+      "Store URL must be a valid domain like example.com"
+    )
+    .required("Store URL is required"),
   country: yup.string().required('Country is required'),
   state: yup.string().required('State is required'),
   city: yup.string().required('City is required'),
@@ -63,11 +85,19 @@ export const updatePasswordSchema = yup.object().shape({
     .string()
     .required("New password is required")
     .min(6, "New password must be at least 6 characters")
+    .matches(
+      /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/,
+      "Password must contain at least 1 uppercase letter, 1 number, and 1 special character"
+    )
     .matches(/^\S*$/, "Password must not contain spaces"),
   confirm_password: yup
     .string()
     .required("Please confirm your password")
     .oneOf([yup.ref("new_password")], "Passwords must match")
+    .matches(
+      /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/,
+      "Password must contain at least 1 uppercase letter, 1 number, and 1 special character"
+    )
     .matches(/^\S*$/, "Password must not contain spaces"),
 });
 
@@ -91,6 +121,10 @@ export const forgotPasswordSchema = yup.object().shape({
   new_password: yup
     .string()
     .required("Password is required")
+    .matches(
+      /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/,
+      "Password must contain at least 1 uppercase letter, 1 number, and 1 special character"
+    )
     .min(6, "Password must be at least 6 characters")
     .test(
       "no-spaces",

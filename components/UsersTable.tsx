@@ -18,7 +18,7 @@ type Props = {
 
 const UsersTable: React.FC<Props> = ({ data, onFilterChange }) => {
     const [menuVisible, setMenuVisible] = useState(false);
-    const [selected, setSelected] = useState<FilterType>('THIS_WEEK');
+    const [selected, setSelected] = useState<FilterType>('THIS_MONTH');
 
     const handleSelect = (filter: FilterType) => {
         setSelected(filter);

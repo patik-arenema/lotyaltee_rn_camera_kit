@@ -27,7 +27,7 @@ interface Props {
 
 const CardWithFilterMenu = ({ title, additionalText, value, onFilterChange, gradient }: Props) => {
   const [menuVisible, setMenuVisible] = useState(false);
-  const [selected, setSelected] = useState<FilterType>('THIS_WEEK');
+  const [selected, setSelected] = useState<FilterType>('THIS_MONTH');
 
   const handleSelect = (filter: FilterType) => {
     setSelected(filter);
